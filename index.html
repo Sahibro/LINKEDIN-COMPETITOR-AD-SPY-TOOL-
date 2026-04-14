@@ -3,1223 +3,556 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <meta name="description" content="AdVault Pro - Offline-first Facebook Ads Library winner tracker & swipe file"/>
-  <title>AdVault Pro — FB Ads Library Winner Tracker (Offline)</title>
+  <meta name="description" content="Premium Real Estate Agent Website — Listings, valuation, booking, calculators, testimonials. Fast, mobile-first, offline-ready."/>
+  <meta name="keywords" content="real estate agent, homes for sale, property listings, home valuation, buy sell rent"/>
+  <meta name="theme-color" content="#0b1220"/>
+  <title>Meggha Bhatia — Dubai Real Estate Specialist (Premium)</title>
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="Meggha Bhatia — Dubai Real Estate Specialist"/>
+  <meta property="og:description" content="Luxury off-plan & ready properties. Book viewing, get valuation, download brochures."/>
+  <meta property="og:type" content="website"/>
+  <meta property="og:image" content="https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=1200"/>
 
   <!-- Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet"/>
 
-  <style>
-    :root{
-      --bg:#0b1220;
-      --panel:#0f1b33;
-      --card:#111f3d;
-      --card2:#0f1b33;
-      --text:#eaf0ff;
-      --muted:#a7b4d6;
-      --border:rgba(255,255,255,.10);
-      --brand:#2563eb;
-      --brand2:#06b6d4;
-      --ok:#22c55e;
-      --warn:#f59e0b;
-      --bad:#ef4444;
-      --shadow: 0 24px 60px rgba(0,0,0,.35);
-      --radius:16px;
-    }
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0;
-      font-family:Inter,system-ui,Segoe UI,Roboto,Arial;
-      color:var(--text);
-      background:
-        radial-gradient(900px 500px at 15% 10%, rgba(37,99,235,.35), transparent 60%),
-        radial-gradient(900px 500px at 80% 20%, rgba(6,182,212,.25), transparent 60%),
-        radial-gradient(900px 500px at 60% 90%, rgba(34,197,94,.18), transparent 60%),
-        var(--bg);
-      overflow-x:hidden;
-    }
-    a{color:inherit}
-    .container{max-width:1200px;margin:0 auto;padding:20px}
-    .topbar{
-      position:sticky;top:0;z-index:50;
-      backdrop-filter: blur(12px);
-      background: linear-gradient(to bottom, rgba(11,18,32,.75), rgba(11,18,32,.35));
-      border-bottom:1px solid var(--border);
-    }
-    .topbar .row{
-      display:flex;align-items:center;justify-content:space-between;gap:16px;
-      padding:16px 20px;
-    }
-    .brand{
-      display:flex;align-items:center;gap:12px;
-      font-weight:900;letter-spacing:-.02em;
-    }
-    .logo{
-      width:44px;height:44px;border-radius:14px;
-      background: linear-gradient(135deg, var(--brand), var(--brand2));
-      display:grid;place-items:center;
-      box-shadow: 0 12px 30px rgba(37,99,235,.25);
-      flex:0 0 auto;
-    }
-    .logo span{font-size:20px}
-    .brand h1{margin:0;font-size:16px;line-height:1.1}
-    .brand p{margin:0;font-size:12px;color:var(--muted);font-weight:600}
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
 
-    .actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
-    .btn{
-      border:1px solid var(--border);
-      background: rgba(255,255,255,.04);
-      color:var(--text);
-      padding:10px 12px;border-radius:12px;
-      font-weight:700;font-size:13px;
-      cursor:pointer;
-      transition:.2s transform,.2s background,.2s border-color;
-      display:inline-flex;align-items:center;gap:8px;
-      user-select:none;
-    }
-    .btn:hover{transform:translateY(-1px);background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.16)}
-    .btn.primary{background:linear-gradient(135deg, var(--brand), var(--brand2));border-color:transparent}
-    .btn.primary:hover{filter:brightness(1.04)}
-    .btn.danger{background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.35)}
-    .btn.ok{background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.35)}
-    .btn.ghost{background:transparent}
-    .pill{
-      font-size:12px;font-weight:800;
-      padding:6px 10px;border-radius:999px;
-      border:1px solid var(--border);
-      background:rgba(255,255,255,.03);
-      color:var(--muted);
-    }
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json"/>
 
-    .grid{
-      display:grid;
-      grid-template-columns: 1.15fr .85fr;
-      gap:18px;
-      margin-top:18px;
-    }
-    @media (max-width: 980px){.grid{grid-template-columns:1fr}}
-    .panel{
-      background: rgba(255,255,255,.04);
-      border:1px solid var(--border);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      overflow:hidden;
-    }
-    .panel-h{
-      padding:16px 16px;
-      display:flex;align-items:center;justify-content:space-between;gap:12px;
-      border-bottom:1px solid var(--border);
-      background: linear-gradient(180deg, rgba(255,255,255,.06), transparent);
-    }
-    .panel-h h2{margin:0;font-size:14px;letter-spacing:-.01em}
-    .panel-h small{color:var(--muted);font-weight:700}
-    .panel-b{padding:16px}
+  <!-- Styles -->
+  <link rel="stylesheet" href="styles.css"/>
 
-    .kpis{
-      display:grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap:12px;
-    }
-    @media (max-width: 980px){.kpis{grid-template-columns: repeat(2,1fr)}}
-    .kpi{
-      background: rgba(255,255,255,.04);
-      border:1px solid var(--border);
-      border-radius: 14px;
-      padding:14px;
-    }
-    .kpi .t{font-size:12px;color:var(--muted);font-weight:800}
-    .kpi .v{font-size:22px;font-weight:900;letter-spacing:-.02em;margin-top:4px}
-    .kpi .s{font-size:12px;color:var(--muted);margin-top:6px;font-weight:700}
-
-    .searchRow{
-      display:flex;gap:10px;flex-wrap:wrap;margin:12px 0 0;
-    }
-    .input, select, textarea{
-      width:100%;
-      border:1px solid var(--border);
-      background: rgba(255,255,255,.04);
-      color:var(--text);
-      border-radius: 12px;
-      padding:11px 12px;
-      font-weight:650;
-      outline:none;
-    }
-    .input:focus, select:focus, textarea:focus{border-color:rgba(37,99,235,.7);box-shadow:0 0 0 4px rgba(37,99,235,.14)}
-    .field{display:grid;gap:7px;margin-bottom:12px}
-    .label{font-size:12px;color:var(--muted);font-weight:850}
-    .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-    @media (max-width:700px){.row2{grid-template-columns:1fr}}
-
-    .chips{display:flex;gap:8px;flex-wrap:wrap}
-    .chip{
-      padding:7px 10px;border-radius:999px;
-      border:1px solid var(--border);
-      background: rgba(255,255,255,.03);
-      color:var(--text);
-      font-size:12px;font-weight:800;
-      cursor:pointer;
-      transition:.15s transform,.15s background;
-      user-select:none;
-    }
-    .chip:hover{transform:translateY(-1px)}
-    .chip.active{background:rgba(37,99,235,.18);border-color:rgba(37,99,235,.55)}
-
-    .list{display:grid;gap:12px}
-    .card{
-      background: rgba(255,255,255,.04);
-      border:1px solid var(--border);
-      border-radius: 16px;
-      overflow:hidden;
-      transition:.2s transform,.2s border-color;
-    }
-    .card:hover{transform:translateY(-2px);border-color:rgba(255,255,255,.18)}
-    .card .head{
-      display:flex;gap:12px;align-items:flex-start;
-      padding:14px 14px;
-    }
-    .avatar{
-      width:44px;height:44px;border-radius:14px;
-      background: rgba(255,255,255,.06);
-      border:1px solid var(--border);
-      display:grid;place-items:center;
-      font-size:18px;font-weight:900;
-      flex:0 0 auto;
-    }
-    .meta{flex:1}
-    .meta .title{font-weight:900;letter-spacing:-.01em}
-    .meta .sub{color:var(--muted);font-size:12px;margin-top:2px;font-weight:750}
-    .badges{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
-    .badge{
-      font-size:11px;font-weight:900;
-      padding:6px 9px;border-radius:999px;
-      border:1px solid var(--border);
-      background: rgba(255,255,255,.03);
-      color:var(--muted);
-    }
-    .badge.ok{background:rgba(34,197,94,.13);border-color:rgba(34,197,94,.35);color:#b8f7cd}
-    .badge.warn{background:rgba(245,158,11,.13);border-color:rgba(245,158,11,.35);color:#ffe2b0}
-    .badge.bad{background:rgba(239,68,68,.13);border-color:rgba(239,68,68,.35);color:#ffc0c0}
-
-    .thumb{
-      width:100%;height:190px;background: rgba(255,255,255,.03);
-      border-top:1px solid var(--border);
-      display:grid;place-items:center;
-      overflow:hidden;
-    }
-    .thumb img{width:100%;height:100%;object-fit:cover;display:block}
-    .body{padding:0 14px 14px}
-    .copy{
-      color:var(--text);
-      font-size:13px;
-      line-height:1.6;
-      margin:10px 0 10px;
-      display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;
-    }
-    .actionsRow{display:flex;gap:10px;flex-wrap:wrap}
-    .tiny{font-size:12px;color:var(--muted);font-weight:750}
-
-    .muted{color:var(--muted)}
-    .hr{height:1px;background:var(--border);margin:12px 0}
-
-    /* Modal */
-    .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:1000;padding:18px;background:rgba(0,0,0,.7)}
-    .modal.open{display:flex}
-    .modal-card{
-      width:min(860px, 100%);
-      background: rgba(15,27,51,.92);
-      border:1px solid rgba(255,255,255,.14);
-      border-radius: 20px;
-      box-shadow: 0 28px 90px rgba(0,0,0,.55);
-      overflow:hidden;
-      backdrop-filter: blur(14px);
-    }
-    .modal-h{
-      padding:14px 16px;
-      display:flex;align-items:center;justify-content:space-between;gap:10px;
-      border-bottom:1px solid rgba(255,255,255,.12);
-      background: linear-gradient(180deg, rgba(255,255,255,.06), transparent);
-    }
-    .modal-h h3{margin:0;font-size:14px;letter-spacing:-.01em}
-    .x{width:38px;height:38px;border-radius:12px}
-    .modal-b{padding:16px}
-
-    /* Toast */
-    .toast{
-      position:fixed;right:18px;bottom:18px;z-index:2000;
-      background: rgba(15,27,51,.95);
-      border:1px solid rgba(255,255,255,.14);
-      color:var(--text);
-      padding:12px 14px;border-radius:14px;
-      box-shadow:0 20px 60px rgba(0,0,0,.45);
-      display:none;gap:10px;align-items:flex-start;max-width:360px
-    }
-    .toast.show{display:flex;animation:pop .18s ease}
-    @keyframes pop{from{transform:translateY(10px);opacity:.0}to{transform:translateY(0);opacity:1}}
-    .toast .ic{width:34px;height:34px;border-radius:12px;display:grid;place-items:center;background:rgba(37,99,235,.18);border:1px solid rgba(37,99,235,.35);flex:0 0 auto}
-    .toast .t1{font-weight:900}
-    .toast .t2{font-size:12px;color:var(--muted);margin-top:2px;font-weight:750}
-
-    /* Print */
-    @media print{
-      .topbar,.btn,.chip,.toast{display:none!important}
-      body{background:white;color:black}
-      .panel{box-shadow:none}
-    }
-  </style>
+  <!-- Schema: RealEstateAgent -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "RealEstateAgent",
+    "name": "Meggha Bhatia",
+    "image": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=800",
+    "url": "https://realestatewithmeggha.com",
+    "telephone": "+971505709598",
+    "address": {
+      "@type": "PostalAddress",
+      "addressLocality": "Dubai",
+      "addressRegion": "Dubai",
+      "addressCountry": "AE"
+    },
+    "areaServed": ["Dubai", "Downtown Dubai", "Dubai Marina", "Palm Jumeirah", "Dubai Creek Harbour"],
+    "sameAs": ["https://www.linkedin.com/"]
+  }
+  </script>
 </head>
-<body>
 
-  <!-- Topbar -->
-  <div class="topbar">
-    <div class="row container" style="padding:16px 20px;">
-      <div class="brand">
-        <div class="logo"><span>🗂️</span></div>
-        <div>
-          <h1>AdVault Pro</h1>
-          <p>FB Ads Library Winner Tracker • Offline-first</p>
-        </div>
-      </div>
-      <div class="actions">
-        <span class="pill" id="offlinePill">Checking…</span>
-        <button class="btn primary" id="btnAddAd">➕ Quick Capture</button>
-        <button class="btn" id="btnAddComp">🏷️ Add Competitor</button>
-        <button class="btn" id="btnExport">⬇️ Export</button>
-        <button class="btn" id="btnImport">⬆️ Import</button>
-        <button class="btn danger" id="btnReset">Reset</button>
-      </div>
+<body>
+  <!-- Loading -->
+  <div id="loader" class="loader">
+    <div class="loader-card">
+      <div class="loader-logo"><i class="fa-solid fa-building"></i></div>
+      <div class="loader-title">MEGGHA BHATIA</div>
+      <div class="loader-sub">Dubai Real Estate Specialist</div>
+      <div class="loader-bar"><span></span></div>
+      <div class="loader-hint">Loading premium experience…</div>
     </div>
   </div>
 
-  <div class="container">
-    <!-- KPI panel -->
-    <div class="panel">
-      <div class="panel-h">
-        <div>
-          <h2>Dashboard</h2>
-          <small class="muted">Track winners by duration (proxy for performance) + build a repeatable swipe file</small>
-        </div>
-        <small class="muted" id="lastSaved">—</small>
+  <!-- Announcement -->
+  <div class="announce" id="announce">
+    <div class="container announce-row">
+      <div class="announce-left">
+        <span class="dot"></span>
+        <span><b>2026 Launch Offers:</b> Early-bird payment plans + exclusive inventory access</span>
       </div>
-      <div class="panel-b">
-        <div class="kpis">
-          <div class="kpi">
-            <div class="t">Competitors</div>
-            <div class="v" id="kpiCompetitors">0</div>
-            <div class="s">Saved watchlist</div>
+      <button class="announce-x" id="announceClose" aria-label="Close">✕</button>
+    </div>
+  </div>
+
+  <!-- Navbar -->
+  <header class="nav" id="nav">
+    <div class="container nav-row">
+      <a class="brand" href="#home" aria-label="Home">
+        <div class="brand-mark"><i class="fa-solid fa-building"></i></div>
+        <div class="brand-text">
+          <div class="brand-title">Meggha Bhatia</div>
+          <div class="brand-sub">Dubai Real Estate • Luxury Off‑Plan</div>
+        </div>
+      </a>
+
+      <nav class="menu" id="menu">
+        <a href="#listings" class="link">Listings</a>
+        <a href="#areas" class="link">Areas</a>
+        <a href="#services" class="link">Services</a>
+        <a href="#tools" class="link">Calculators</a>
+        <a href="#reviews" class="link">Reviews</a>
+        <a href="#contact" class="link">Contact</a>
+      </nav>
+
+      <div class="nav-cta">
+        <button class="btn ghost" id="themeToggle" title="Toggle theme"><i class="fa-solid fa-moon"></i></button>
+        <a class="btn ghost" href="tel:+971505709598"><i class="fa-solid fa-phone"></i> Call</a>
+        <a class="btn primary" id="btnBookTop" href="#contact"><i class="fa-solid fa-calendar-check"></i> Book Viewing</a>
+        <button class="burger" id="burger" aria-label="Menu"><span></span><span></span><span></span></button>
+      </div>
+    </div>
+
+    <!-- Mobile Drawer -->
+    <div class="drawer" id="drawer">
+      <div class="drawer-inner">
+        <a href="#listings" class="dlink">Listings</a>
+        <a href="#areas" class="dlink">Areas</a>
+        <a href="#services" class="dlink">Services</a>
+        <a href="#tools" class="dlink">Calculators</a>
+        <a href="#reviews" class="dlink">Reviews</a>
+        <a href="#contact" class="dlink">Contact</a>
+        <div class="drawer-actions">
+          <a class="btn ghost" href="tel:+971505709598"><i class="fa-solid fa-phone"></i> Call Now</a>
+          <a class="btn primary" href="https://wa.me/971505709598" target="_blank" rel="noopener"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Scroll progress -->
+  <div class="scrollbar" id="scrollbar"></div>
+
+  <!-- Hero -->
+  <main id="home" class="hero">
+    <div class="hero-bg">
+      <div class="mesh"></div>
+      <div class="noise"></div>
+      <div class="gridlines"></div>
+    </div>
+
+    <div class="container hero-row">
+      <div class="hero-left">
+        <div class="chip">
+          <i class="fa-solid fa-certificate"></i> RERA Certified • Founder @bookyourghar • GUC Alumni
+        </div>
+
+        <h1 class="h1">
+          Buy, Invest & Grow in <span class="grad">Dubai Real Estate</span> —
+          <span class="type" id="type"></span><span class="cursor">|</span>
+        </h1>
+
+        <p class="p">
+          Premium off‑plan launches, luxury ready homes, and investor‑first guidance with transparent process.
+          Get curated listings, ROI insights, and end‑to‑end support.
+        </p>
+
+        <div class="hero-actions">
+          <a class="btn primary lg" href="#listings"><i class="fa-solid fa-magnifying-glass"></i> Search Properties</a>
+          <a class="btn ghost lg" href="#tools"><i class="fa-solid fa-calculator"></i> ROI Calculator</a>
+          <a class="btn outline lg" href="https://wa.me/971505709598" target="_blank" rel="noopener"><i class="fa-brands fa-whatsapp"></i> WhatsApp Now</a>
+        </div>
+
+        <div class="trust-row">
+          <div class="trust">
+            <div class="trust-k">1,000+</div>
+            <div class="trust-t">Client conversations</div>
           </div>
-          <div class="kpi">
-            <div class="t">Ads Saved</div>
-            <div class="v" id="kpiAds">0</div>
-            <div class="s">Your swipe vault</div>
+          <div class="trust">
+            <div class="trust-k">25%+</div>
+            <div class="trust-t">Avg investor ROI focus</div>
           </div>
-          <div class="kpi">
-            <div class="t">Winners (≥30d)</div>
-            <div class="v" id="kpiWinners">0</div>
-            <div class="s">Likely performers</div>
-          </div>
-          <div class="kpi">
-            <div class="t">New This Week</div>
-            <div class="v" id="kpiNew">0</div>
-            <div class="s">Recently captured</div>
+          <div class="trust">
+            <div class="trust-k">24/7</div>
+            <div class="trust-t">WhatsApp support</div>
           </div>
         </div>
 
-        <div class="searchRow">
-          <input class="input" id="q" placeholder="Search ads by brand, hook, offer, CTA, keywords… (offline full-text)"/>
-          <select id="sort" class="input" style="max-width:220px">
-            <option value="newest">Sort: Newest</option>
-            <option value="oldest">Sort: Oldest</option>
-            <option value="duration_desc">Sort: Longest Running</option>
-            <option value="duration_asc">Sort: Shortest Running</option>
+        <div class="badge-row">
+          <span class="badge"><i class="fa-solid fa-shield"></i> Verified process</span>
+          <span class="badge"><i class="fa-solid fa-camera"></i> Pro media</span>
+          <span class="badge"><i class="fa-solid fa-file-contract"></i> Paperwork support</span>
+        </div>
+      </div>
+
+      <div class="hero-right">
+        <div class="hero-card">
+          <div class="hero-card-top">
+            <div class="mini-avatar">MB</div>
+            <div>
+              <div class="mini-title">Meggha Bhatia</div>
+              <div class="mini-sub">Dubai Real Estate Specialist</div>
+            </div>
+            <span class="pill ok"><i class="fa-solid fa-circle"></i> Online</span>
+          </div>
+
+          <div class="hero-card-img" role="img" aria-label="Dubai skyline image"></div>
+
+          <div class="hero-card-actions">
+            <button class="btn ghost" id="btnValuation"><i class="fa-solid fa-chart-line"></i> Get Valuation</button>
+            <button class="btn primary" id="btnBrochure"><i class="fa-solid fa-download"></i> Download Guide</button>
+          </div>
+
+          <div class="hero-card-foot">
+            <div class="tiny"><i class="fa-solid fa-star"></i> 5.0 Client Rating</div>
+            <div class="tiny"><i class="fa-solid fa-location-dot"></i> Dubai, UAE</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="scroll-ind">
+      <span>Scroll</span><i class="fa-solid fa-chevron-down"></i>
+    </div>
+  </main>
+
+  <!-- Sticky CTA bar (Mobile) -->
+  <div class="stickybar" id="stickybar">
+    <a href="tel:+971505709598" class="sbtn"><i class="fa-solid fa-phone"></i><span>Call</span></a>
+    <a href="https://wa.me/971505709598" target="_blank" rel="noopener" class="sbtn"><i class="fa-brands fa-whatsapp"></i><span>WhatsApp</span></a>
+    <a href="#contact" class="sbtn primary"><i class="fa-solid fa-calendar-check"></i><span>Book</span></a>
+  </div>
+
+  <!-- Listings -->
+  <section id="listings" class="section">
+    <div class="container">
+      <div class="sec-head">
+        <div>
+          <div class="kicker">Listings</div>
+          <h2 class="h2">Search Premium Properties</h2>
+          <p class="muted">Fast filters, favorites, brochures. // TODO: Connect to IDX/MLS feed</p>
+        </div>
+        <div class="sec-actions">
+          <button class="btn ghost" id="btnFavorites"><i class="fa-solid fa-heart"></i> Favorites (<span id="favCount">0</span>)</button>
+          <button class="btn ghost" id="btnCompare"><i class="fa-solid fa-scale-balanced"></i> Compare</button>
+        </div>
+      </div>
+
+      <div class="filters">
+        <div class="f">
+          <label>Keyword</label>
+          <input id="qListing" placeholder="e.g., Marina, Palm, Off-plan, Burj view"/>
+        </div>
+        <div class="f">
+          <label>Type</label>
+          <select id="fType">
+            <option value="any">Any</option>
+            <option value="apartment">Apartment</option>
+            <option value="villa">Villa</option>
+            <option value="townhouse">Townhouse</option>
+          </select>
+        </div>
+        <div class="f">
+          <label>Area</label>
+          <select id="fArea">
+            <option value="any">Any</option>
+            <option value="downtown">Downtown</option>
+            <option value="marina">Dubai Marina</option>
+            <option value="palm">Palm Jumeirah</option>
+            <option value="creek">Dubai Creek</option>
+          </select>
+        </div>
+        <div class="f">
+          <label>Budget (AED)</label>
+          <select id="fBudget">
+            <option value="any">Any</option>
+            <option value="0-1000000">Below 1M</option>
+            <option value="1000000-2000000">1M – 2M</option>
+            <option value="2000000-5000000">2M – 5M</option>
+            <option value="5000000-999999999">5M+</option>
+          </select>
+        </div>
+        <div class="f">
+          <label>Beds</label>
+          <select id="fBeds">
+            <option value="any">Any</option>
+            <option value="studio">Studio</option>
+            <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4+</option>
           </select>
         </div>
 
-        <div style="margin-top:12px" class="chips" id="chips">
-          <div class="chip active" data-filter="all">All</div>
-          <div class="chip" data-filter="winner">Winners (≥30d)</div>
-          <div class="chip" data-filter="new">New (7d)</div>
-          <div class="chip" data-filter="video">Format: Video</div>
-          <div class="chip" data-filter="image">Format: Image</div>
-          <div class="chip" data-filter="carousel">Format: Carousel</div>
-          <div class="chip" data-filter="leadgen">Funnel: Lead Gen</div>
-          <div class="chip" data-filter="ecom">Funnel: Ecom</div>
-          <div class="chip" data-filter="retarget">Funnel: Retarget</div>
+        <div class="f fbtns">
+          <button class="btn primary" id="btnSearch"><i class="fa-solid fa-magnifying-glass"></i> Search</button>
+          <button class="btn ghost" id="btnClear"><i class="fa-solid fa-rotate-left"></i> Reset</button>
+        </div>
+      </div>
+
+      <div class="cards" id="listingGrid"></div>
+
+      <div class="center mt">
+        <button class="btn ghost" id="btnLoadMore"><i class="fa-solid fa-plus"></i> Load more</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Areas / Neighborhood expertise -->
+  <section id="areas" class="section alt">
+    <div class="container">
+      <div class="sec-head">
+        <div>
+          <div class="kicker">Areas</div>
+          <h2 class="h2">Neighborhood Expertise</h2>
+          <p class="muted">Local insights + trends (SEO-friendly). // TODO: Connect to real market data</p>
+        </div>
+      </div>
+
+      <div class="tabs" id="areaTabs">
+        <button class="tab active" data-tab="downtown">Downtown</button>
+        <button class="tab" data-tab="marina">Dubai Marina</button>
+        <button class="tab" data-tab="palm">Palm Jumeirah</button>
+        <button class="tab" data-tab="creek">Dubai Creek</button>
+      </div>
+
+      <div class="tabpanes">
+        <div class="pane active" id="pane-downtown"></div>
+        <div class="pane" id="pane-marina"></div>
+        <div class="pane" id="pane-palm"></div>
+        <div class="pane" id="pane-creek"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Services -->
+  <section id="services" class="section">
+    <div class="container">
+      <div class="sec-head">
+        <div>
+          <div class="kicker">Services</div>
+          <h2 class="h2">Buy • Sell • Invest with Confidence</h2>
+          <p class="muted">Clear process + trust signals = higher conversion.</p>
+        </div>
+      </div>
+
+      <div class="svc">
+        <div class="svc-card">
+          <div class="svc-ic"><i class="fa-solid fa-magnifying-glass-location"></i></div>
+          <h3>Buyer Advisory</h3>
+          <p class="muted">Shortlisting, site visits, negotiation, legal paperwork, and handover support.</p>
+          <ul>
+            <li><i class="fa-solid fa-check"></i> Curated listings</li>
+            <li><i class="fa-solid fa-check"></i> Offer strategy</li>
+            <li><i class="fa-solid fa-check"></i> Financing guidance</li>
+          </ul>
+          <a class="btn ghost" href="#contact">Book buyer call <i class="fa-solid fa-arrow-right"></i></a>
+        </div>
+
+        <div class="svc-card featured">
+          <div class="tagpop">Most Requested</div>
+          <div class="svc-ic"><i class="fa-solid fa-city"></i></div>
+          <h3>Off‑Plan Specialist</h3>
+          <p class="muted">Launch inventory, payment plans, exit strategies, yield analysis—end to end.</p>
+          <ul>
+            <li><i class="fa-solid fa-check"></i> Pre‑launch access</li>
+            <li><i class="fa-solid fa-check"></i> ROI & yield math</li>
+            <li><i class="fa-solid fa-check"></i> Golden visa guidance</li>
+          </ul>
+          <a class="btn primary" href="https://wa.me/971505709598" target="_blank" rel="noopener">WhatsApp for launches <i class="fa-solid fa-arrow-right"></i></a>
+        </div>
+
+        <div class="svc-card">
+          <div class="svc-ic"><i class="fa-solid fa-hand-holding-dollar"></i></div>
+          <h3>Seller Strategy</h3>
+          <p class="muted">Pricing, staging, professional media, lead handling, and closing support.</p>
+          <ul>
+            <li><i class="fa-solid fa-check"></i> Listing optimization</li>
+            <li><i class="fa-solid fa-check"></i> Negotiation support</li>
+            <li><i class="fa-solid fa-check"></i> Faster sale plan</li>
+          </ul>
+          <a class="btn ghost" href="#contact">Get valuation <i class="fa-solid fa-arrow-right"></i></a>
+        </div>
+      </div>
+
+      <div class="process">
+        <div class="kicker">How it works</div>
+        <div class="steps">
+          <div class="step"><div class="n">1</div><div><b>Consult</b><div class="muted">Understand budget, goals, timeline.</div></div></div>
+          <div class="step"><div class="n">2</div><div><b>Shortlist</b><div class="muted">Curated options + tours.</div></div></div>
+          <div class="step"><div class="n">3</div><div><b>Close</b><div class="muted">Offer + paperwork + transfer.</div></div></div>
+          <div class="step"><div class="n">4</div><div><b>Aftercare</b><div class="muted">Handover + rent/resale support.</div></div></div>
         </div>
       </div>
     </div>
+  </section>
 
-    <div class="grid">
-      <!-- Left: Ads -->
-      <div class="panel">
-        <div class="panel-h">
-          <h2>Swipe Vault</h2>
-          <small class="muted">Tip: “Longest running” ads = fastest shortcut to winners.</small>
-        </div>
-        <div class="panel-b">
-          <div class="list" id="adList"></div>
-          <div id="emptyState" class="muted" style="display:none;padding:20px;text-align:center">
-            <div style="font-size:44px;margin-bottom:10px">🧠</div>
-            <div style="font-weight:900">No ads saved yet.</div>
-            <div style="margin-top:6px">Click <b>Quick Capture</b> and save the best competitor ads you find in Ads Library.</div>
-          </div>
+  <!-- Tools / Calculators -->
+  <section id="tools" class="section alt">
+    <div class="container">
+      <div class="sec-head">
+        <div>
+          <div class="kicker">Tools</div>
+          <h2 class="h2">Mortgage + ROI Calculators</h2>
+          <p class="muted">Engagement tools increase inquiries & time-on-site.</p>
         </div>
       </div>
 
-      <!-- Right: Competitors + Playbook -->
-      <div class="panel">
-        <div class="panel-h">
-          <h2>Competitor Watchlist</h2>
-          <small class="muted">Store URLs + notes. Offline ready.</small>
+      <div class="toolgrid">
+        <div class="tool">
+          <h3><i class="fa-solid fa-calculator"></i> Mortgage / EMI</h3>
+          <div class="grid2">
+            <div class="f"><label>Property Price (AED)</label><input id="mPrice" type="number" value="1800000"></div>
+            <div class="f"><label>Down Payment (%)</label><input id="mDown" type="number" value="20"></div>
+            <div class="f"><label>Interest Rate (%)</label><input id="mRate" type="number" value="4.5" step="0.1"></div>
+            <div class="f"><label>Tenure (years)</label><input id="mYears" type="number" value="25"></div>
+          </div>
+          <button class="btn primary" id="btnEMI">Calculate EMI</button>
+          <div class="result" id="emiRes"></div>
+          <!-- TODO: Connect to your backend for real bank rates -->
         </div>
-        <div class="panel-b">
-          <div id="compList" class="list"></div>
-          <div class="hr"></div>
-          <div>
-            <div class="label">Pro Playbook (built-in)</div>
-            <div class="muted tiny">
-              1) Ads Library खोलो → 2) Long-running ads shortlist करो → 3) AdVault में capture + tag →
-              4) Weekly PDF export करके team/client को भेजो.
+
+        <div class="tool">
+          <h3><i class="fa-solid fa-chart-line"></i> Rental ROI</h3>
+          <div class="grid2">
+            <div class="f"><label>Purchase Price (AED)</label><input id="rPrice" type="number" value="1200000"></div>
+            <div class="f"><label>Annual Rent (AED)</label><input id="rRent" type="number" value="90000"></div>
+            <div class="f"><label>Annual Costs (AED)</label><input id="rCost" type="number" value="12000"></div>
+            <div class="f"><label>Appreciation (%/yr)</label><input id="rApp" type="number" value="5" step="0.1"></div>
+          </div>
+          <button class="btn primary" id="btnROI">Calculate ROI</button>
+          <div class="result" id="roiRes"></div>
+          <!-- TODO: Connect to your backend for real rental comps -->
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Reviews -->
+  <section id="reviews" class="section">
+    <div class="container">
+      <div class="sec-head">
+        <div>
+          <div class="kicker">Reviews</div>
+          <h2 class="h2">Clients Say “Best Experience”</h2>
+          <p class="muted">Trust = conversion. Add real screenshots/video later.</p>
+        </div>
+      </div>
+
+      <div class="carousel">
+        <button class="carbtn" id="prev"><i class="fa-solid fa-chevron-left"></i></button>
+        <div class="cartrack" id="cartrack"></div>
+        <button class="carbtn" id="next"><i class="fa-solid fa-chevron-right"></i></button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Contact + Booking + Valuation -->
+  <section id="contact" class="section alt">
+    <div class="container">
+      <div class="sec-head">
+        <div>
+          <div class="kicker">Contact</div>
+          <h2 class="h2">Book a Viewing / Get Valuation</h2>
+          <p class="muted">Forms offline bhi save hote hain (PWA). // TODO: Connect to CRM + email</p>
+        </div>
+      </div>
+
+      <div class="contactgrid">
+        <div class="cardbox">
+          <h3>Quick Booking</h3>
+          <form id="bookingForm" class="form">
+            <div class="grid2">
+              <div class="f"><label>Name *</label><input required name="name" placeholder="Your name"/></div>
+              <div class="f"><label>Phone *</label><input required name="phone" placeholder="+971..."/></div>
+              <div class="f"><label>Email</label><input name="email" type="email" placeholder="you@email.com"/></div>
+              <div class="f"><label>Service</label>
+                <select name="service">
+                  <option>Book Viewing</option>
+                  <option>Off-plan Consultation</option>
+                  <option>Sell My Property</option>
+                  <option>Investment Advisory</option>
+                </select>
+              </div>
             </div>
-            <div style="margin-top:10px" class="actionsRow">
-              <button class="btn ok" id="btnWeeklyPDF">🧾 Weekly PDF Report</button>
-              <button class="btn" onclick="window.print()">🖨️ Print</button>
+            <div class="f"><label>Message</label><textarea name="message" rows="4" placeholder="Area, budget, beds, timeline…"></textarea></div>
+            <div class="actionsRow">
+              <button class="btn primary" type="submit"><i class="fa-solid fa-paper-plane"></i> Submit</button>
+              <a class="btn ghost" href="https://wa.me/971505709598" target="_blank" rel="noopener"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a>
+              <button class="btn ghost" type="button" id="btnExportLeads"><i class="fa-solid fa-file-csv"></i> Export Leads CSV</button>
             </div>
-            <div class="hr"></div>
-            <div class="tiny muted">
-              Note: Ads Library public data has limits. This tool focuses on <b>repeatable research + documentation</b>—the real gap.
+            <div class="tiny muted" id="bookingMsg"></div>
+          </form>
+        </div>
+
+        <div class="cardbox">
+          <h3>Seller Valuation (High‑Conversion)</h3>
+          <form id="valuationForm" class="form">
+            <div class="f"><label>Property Address *</label><input required name="address" placeholder="Building, area, unit"/></div>
+            <div class="grid2">
+              <div class="f"><label>Name *</label><input required name="name" placeholder="Your name"/></div>
+              <div class="f"><label>Phone *</label><input required name="phone" placeholder="+971..."/></div>
             </div>
+            <div class="grid2">
+              <div class="f"><label>Property Type</label>
+                <select name="ptype">
+                  <option>Apartment</option><option>Villa</option><option>Townhouse</option><option>Plot</option>
+                </select>
+              </div>
+              <div class="f"><label>Urgency</label>
+                <select name="urgency">
+                  <option>Just checking</option>
+                  <option>Sell in 1–3 months</option>
+                  <option>Sell in 3–6 months</option>
+                  <option>Urgent (ASAP)</option>
+                </select>
+              </div>
+            </div>
+            <button class="btn primary" type="submit"><i class="fa-solid fa-chart-line"></i> Get Free Report</button>
+            <div class="tiny muted" id="valuationMsg"></div>
+          </form>
+
+          <div class="contactcards">
+            <a class="cc" href="tel:+971505709598"><i class="fa-solid fa-phone"></i><div><b>Call</b><div class="muted">+971 50 570 9598</div></div></a>
+            <a class="cc" href="tel:+919599860311"><i class="fa-solid fa-phone"></i><div><b>India</b><div class="muted">+91 95998 60311</div></div></a>
+            <a class="cc" href="mailto:meggha@realestatewithmeggha.com"><i class="fa-solid fa-envelope"></i><div><b>Email</b><div class="muted">meggha@realestatewithmeggha.com</div></div></a>
+            <div class="cc"><i class="fa-solid fa-location-dot"></i><div><b>Office</b><div class="muted">Dubai, UAE</div></div></div>
           </div>
         </div>
       </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="foot">
+    <div class="container footrow">
+      <div>
+        <div class="brand-title">Meggha Bhatia</div>
+        <div class="muted">Dubai Real Estate Specialist • Luxury Off‑Plan</div>
+        <div class="muted tiny">© <span id="year"></span> All rights reserved.</div>
+      </div>
+      <div class="footlinks">
+        <a href="#listings">Listings</a>
+        <a href="#services">Services</a>
+        <a href="#tools">Tools</a>
+        <a href="#contact">Contact</a>
+      </div>
+      <div class="footcta">
+        <a class="btn primary" href="https://wa.me/971505709598" target="_blank" rel="noopener"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Modals -->
+  <div class="modal" id="modal">
+    <div class="modal-backdrop" id="modalClose"></div>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-label="Property details">
+      <div class="modal-head">
+        <div class="modal-title" id="mTitle">Property</div>
+        <button class="x" id="modalX" aria-label="Close">✕</button>
+      </div>
+      <div class="modal-body" id="mBody"></div>
     </div>
   </div>
-
-  <!-- Quick Capture Modal -->
-  <div class="modal" id="modalAd">
-    <div class="modal-card">
-      <div class="modal-h">
-        <h3>Quick Capture — Save a Competitor Ad</h3>
-        <button class="btn x" id="closeAd">✕</button>
-      </div>
-      <div class="modal-b">
-        <div class="row2">
-          <div class="field">
-            <div class="label">Brand / Competitor *</div>
-            <input class="input" id="adBrand" placeholder="e.g., Nike, Shopify, Local competitor" required>
-          </div>
-          <div class="field">
-            <div class="label">Format</div>
-            <select id="adFormat" class="input">
-              <option value="video">Video</option>
-              <option value="image" selected>Image</option>
-              <option value="carousel">Carousel</option>
-              <option value="text">Text</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="field">
-          <div class="label">Headline / Hook *</div>
-          <input class="input" id="adHook" placeholder="The first line / main hook users see" required>
-        </div>
-
-        <div class="field">
-          <div class="label">Primary Text (copy)</div>
-          <textarea class="input" id="adCopy" rows="4" placeholder="Paste ad copy (or summarize)."></textarea>
-        </div>
-
-        <div class="row2">
-          <div class="field">
-            <div class="label">CTA</div>
-            <input class="input" id="adCTA" placeholder="e.g., Learn More / Shop Now / Sign Up">
-          </div>
-          <div class="field">
-            <div class="label">Funnel Stage</div>
-            <select id="adFunnel" class="input">
-              <option value="leadgen">Lead Gen</option>
-              <option value="ecom">E-commerce</option>
-              <option value="retarget">Retargeting</option>
-              <option value="awareness">Awareness</option>
-              <option value="app">App Install</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="row2">
-          <div class="field">
-            <div class="label">Ad Library URL (optional)</div>
-            <input class="input" id="adLibUrl" placeholder="Paste Ads Library URL if you have it">
-          </div>
-          <div class="field">
-            <div class="label">Landing Page URL (optional)</div>
-            <input class="input" id="adLpUrl" placeholder="Paste landing page URL">
-          </div>
-        </div>
-
-        <div class="row2">
-          <div class="field">
-            <div class="label">First Seen (you saw it)</div>
-            <input class="input" id="firstSeen" type="date">
-          </div>
-          <div class="field">
-            <div class="label">Last Seen (you saw it)</div>
-            <input class="input" id="lastSeen" type="date">
-          </div>
-        </div>
-
-        <div class="field">
-          <div class="label">Tags (comma separated)</div>
-          <input class="input" id="adTags" placeholder="e.g., discount, free-trial, testimonial, scarcity, UGC">
-        </div>
-
-        <div class="field">
-          <div class="label">Creative Screenshot (optional)</div>
-          <input class="input" id="adImg" type="file" accept="image/*">
-          <div class="tiny muted">Tip: Ads Library se screenshot lo, yaha upload karo. Offline vault me save ho jayega.</div>
-        </div>
-
-        <div class="actionsRow">
-          <button class="btn primary" id="saveAd">💾 Save Ad</button>
-          <button class="btn" id="fillDemo">✨ Fill Demo</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Add Competitor Modal -->
-  <div class="modal" id="modalComp">
-    <div class="modal-card">
-      <div class="modal-h">
-        <h3>Add Competitor</h3>
-        <button class="btn x" id="closeComp">✕</button>
-      </div>
-      <div class="modal-b">
-        <div class="field">
-          <div class="label">Competitor Name *</div>
-          <input class="input" id="cName" placeholder="e.g., Nike" required>
-        </div>
-        <div class="field">
-          <div class="label">Ads Library URL (optional)</div>
-          <input class="input" id="cUrl" placeholder="Paste Ads Library / Page URL">
-        </div>
-        <div class="field">
-          <div class="label">Notes</div>
-          <textarea class="input" id="cNotes" rows="3" placeholder="Positioning, offers, creatives style, etc."></textarea>
-        </div>
-        <div class="actionsRow">
-          <button class="btn primary" id="saveComp">💾 Save Competitor</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Hidden file input for import -->
-  <input id="importFile" type="file" accept="application/json" style="display:none"/>
 
   <!-- Toast -->
   <div class="toast" id="toast">
-    <div class="ic">✅</div>
+    <div class="tic">✅</div>
     <div>
       <div class="t1" id="toastT">Saved</div>
-      <div class="t2" id="toastM">Done.</div>
+      <div class="t2" id="toastM">Done</div>
     </div>
   </div>
 
-<script>
-/**
- * AdVault Pro (offline-first)
- * - IndexedDB for structured storage (ads + competitors)
- * - PWA service worker registered at runtime (blob)
- * - Export/Import JSON
- * - Weekly PDF "print-to-PDF" style report (no external libs)
- *
- * TODO (optional backend later):
- * - automated change detection + email alerts
- * - team sync / multi-user
- */
-
-const DB_NAME = "advault_pro_db";
-const DB_VER  = 1;
-const STORE_ADS = "ads";
-const STORE_COMPS = "competitors";
-
-let db;
-let activeFilter = "all";
-
-const $ = (id)=>document.getElementById(id);
-
-function toast(title, msg){
-  $("toastT").textContent = title;
-  $("toastM").textContent = msg;
-  const t = $("toast");
-  t.classList.add("show");
-  setTimeout(()=>t.classList.remove("show"), 2400);
-}
-
-function nowISO(){ return new Date().toISOString(); }
-function daysBetween(a,b){
-  const da = new Date(a), db = new Date(b);
-  const diff = Math.abs(db - da);
-  return Math.max(0, Math.ceil(diff / (1000*60*60*24)));
-}
-
-function normalizeTags(str){
-  return (str||"")
-    .split(",")
-    .map(s=>s.trim().toLowerCase())
-    .filter(Boolean)
-    .slice(0, 25);
-}
-
-function safeDateInputValue(d){
-  const x = new Date(d);
-  if (Number.isNaN(x.getTime())) return "";
-  const yyyy = x.getFullYear();
-  const mm = String(x.getMonth()+1).padStart(2,"0");
-  const dd = String(x.getDate()).padStart(2,"0");
-  return `${yyyy}-${mm}-${dd}`;
-}
-
-/* ---------------- IndexedDB ---------------- */
-function openDB(){
-  return new Promise((resolve,reject)=>{
-    const req = indexedDB.open(DB_NAME, DB_VER);
-    req.onupgradeneeded = (e)=>{
-      const db = e.target.result;
-      if(!db.objectStoreNames.contains(STORE_ADS)){
-        const s = db.createObjectStore(STORE_ADS, { keyPath:"id" });
-        s.createIndex("brand","brand",{unique:false});
-        s.createIndex("createdAt","createdAt",{unique:false});
-        s.createIndex("durationDays","durationDays",{unique:false});
-      }
-      if(!db.objectStoreNames.contains(STORE_COMPS)){
-        const s2 = db.createObjectStore(STORE_COMPS, { keyPath:"id" });
-        s2.createIndex("name","name",{unique:false});
-        s2.createIndex("createdAt","createdAt",{unique:false});
-      }
-    };
-    req.onsuccess=()=>resolve(req.result);
-    req.onerror=()=>reject(req.error);
-  });
-}
-
-function tx(store, mode="readonly"){
-  return db.transaction(store, mode).objectStore(store);
-}
-
-function put(store, obj){
-  return new Promise((resolve,reject)=>{
-    const r = tx(store,"readwrite").put(obj);
-    r.onsuccess=()=>resolve(true);
-    r.onerror=()=>reject(r.error);
-  });
-}
-function del(store, id){
-  return new Promise((resolve,reject)=>{
-    const r = tx(store,"readwrite").delete(id);
-    r.onsuccess=()=>resolve(true);
-    r.onerror=()=>reject(r.error);
-  });
-}
-function getAll(store){
-  return new Promise((resolve,reject)=>{
-    const r = tx(store).getAll();
-    r.onsuccess=()=>resolve(r.result||[]);
-    r.onerror=()=>reject(r.error);
-  });
-}
-
-/* ---------------- UI Render ---------------- */
-async function refresh(){
-  const ads = await getAll(STORE_ADS);
-  const comps = await getAll(STORE_COMPS);
-
-  // KPIs
-  $("kpiCompetitors").textContent = comps.length;
-  $("kpiAds").textContent = ads.length;
-
-  const winners = ads.filter(a=>a.durationDays >= 30);
-  $("kpiWinners").textContent = winners.length;
-
-  const weekAgo = Date.now() - 7*24*60*60*1000;
-  const newWeek = ads.filter(a=>new Date(a.createdAt).getTime() >= weekAgo);
-  $("kpiNew").textContent = newWeek.length;
-
-  $("lastSaved").textContent = ads.length ? `Last save: ${new Date(Math.max(...ads.map(a=>new Date(a.updatedAt||a.createdAt).getTime()))).toLocaleString()}` : "—";
-
-  renderCompetitors(comps);
-  renderAds(ads, comps);
-}
-
-function renderCompetitors(comps){
-  const el = $("compList");
-  if(!comps.length){
-    el.innerHTML = `
-      <div class="card" style="padding:14px">
-        <div class="muted" style="font-weight:900">No competitors yet.</div>
-        <div class="tiny muted">Add your top 3–10 competitors to start building a repeatable research system.</div>
-      </div>`;
-    return;
-  }
-  el.innerHTML = comps
-    .sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt))
-    .map(c=>`
-      <div class="card">
-        <div class="head">
-          <div class="avatar">🏷️</div>
-          <div class="meta">
-            <div class="title">${escapeHtml(c.name)}</div>
-            <div class="sub">${c.url ? `<a href="${escapeAttr(c.url)}" target="_blank" rel="noopener">Open URL ↗</a>` : "No URL saved"}</div>
-            <div class="badges">
-              <span class="badge">${new Date(c.createdAt).toLocaleDateString()}</span>
-              <span class="badge">${(c.notes||"").length ? "Notes ✓" : "No notes"}</span>
-            </div>
-          </div>
-        </div>
-        <div class="body">
-          ${c.notes ? `<div class="tiny muted" style="white-space:pre-wrap">${escapeHtml(c.notes)}</div>` : `<div class="tiny muted">Tip: note competitor offer + angle + creative style.</div>`}
-          <div class="actionsRow" style="margin-top:10px">
-            <button class="btn danger btn-sm" onclick="removeComp('${c.id}')">Delete</button>
-          </div>
-        </div>
-      </div>
-    `).join("");
-}
-
-function renderAds(ads){
-  // Search + filter + sort
-  const q = ($("q").value||"").trim().toLowerCase();
-  const sort = $("sort").value;
-
-  let filtered = [...ads];
-
-  if(q){
-    filtered = filtered.filter(a=>{
-      const hay = [
-        a.brand,a.hook,a.copy,a.cta,a.funnel,a.format,
-        (a.tags||[]).join(" "),
-        a.adLibUrl,a.lpUrl
-      ].join(" ").toLowerCase();
-      return hay.includes(q);
-    });
-  }
-
-  const now = Date.now();
-  if(activeFilter==="winner") filtered = filtered.filter(a=>a.durationDays>=30);
-  if(activeFilter==="new") filtered = filtered.filter(a=> (now - new Date(a.createdAt).getTime()) <= 7*24*60*60*1000);
-  if(["video","image","carousel"].includes(activeFilter)) filtered = filtered.filter(a=>a.format===activeFilter);
-  if(["leadgen","ecom","retarget"].includes(activeFilter)) filtered = filtered.filter(a=>a.funnel===activeFilter);
-
-  if(sort==="newest") filtered.sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
-  if(sort==="oldest") filtered.sort((a,b)=>new Date(a.createdAt)-new Date(b.createdAt));
-  if(sort==="duration_desc") filtered.sort((a,b)=> (b.durationDays||0)-(a.durationDays||0));
-  if(sort==="duration_asc") filtered.sort((a,b)=> (a.durationDays||0)-(b.durationDays||0));
-
-  const list = $("adList");
-  $("emptyState").style.display = filtered.length ? "none":"block";
-
-  list.innerHTML = filtered.map(a=>{
-    const age = a.durationDays ?? 0;
-    const durBadge = age>=60 ? `<span class="badge ok">Winner • ${age}d</span>`
-      : age>=30 ? `<span class="badge ok">Likely Winner • ${age}d</span>`
-      : age>=7 ? `<span class="badge warn">${age}d running</span>`
-      : `<span class="badge">${age}d running</span>`;
-
-    const newBadge = (Date.now()-new Date(a.createdAt).getTime() <= 7*24*60*60*1000) ? `<span class="badge warn">New</span>` : ``;
-
-    const tags = (a.tags||[]).slice(0,6).map(t=>`<span class="badge">${escapeHtml(t)}</span>`).join("");
-
-    return `
-      <div class="card">
-        <div class="head">
-          <div class="avatar">${escapeHtml((a.brand||"A").slice(0,2).toUpperCase())}</div>
-          <div class="meta">
-            <div class="title">${escapeHtml(a.brand)}</div>
-            <div class="sub">${escapeHtml(a.hook)}</div>
-            <div class="badges">
-              ${durBadge}
-              ${newBadge}
-              <span class="badge">${escapeHtml(a.format)}</span>
-              <span class="badge">${escapeHtml(a.funnel)}</span>
-              ${tags}
-            </div>
-          </div>
-        </div>
-
-        ${a.imageDataUrl ? `<div class="thumb"><img src="${a.imageDataUrl}" alt="ad creative"></div>` : `<div class="thumb"><div class="muted tiny">No screenshot saved</div></div>`}
-
-        <div class="body">
-          <div class="copy">${escapeHtml(a.copy || "—")}</div>
-          <div class="tiny muted">
-            First seen: <b>${a.firstSeen ? new Date(a.firstSeen).toLocaleDateString(): "—"}</b> •
-            Last seen: <b>${a.lastSeen ? new Date(a.lastSeen).toLocaleDateString(): "—"}</b>
-          </div>
-          <div class="actionsRow" style="margin-top:10px">
-            <button class="btn btn-sm" onclick="openDetails('${a.id}')">👁️ Details</button>
-            <button class="btn btn-sm" onclick="copyText('${a.id}')">📋 Copy</button>
-            <button class="btn danger btn-sm" onclick="removeAd('${a.id}')">Delete</button>
-          </div>
-        </div>
-      </div>
-    `;
-  }).join("");
-}
-
-/* ---------------- Modal / Actions ---------------- */
-function openModal(id){ $(id).classList.add("open"); }
-function closeModal(id){ $(id).classList.remove("open"); }
-
-$("btnAddAd").addEventListener("click", ()=>{ presetDates(); openModal("modalAd"); });
-$("closeAd").addEventListener("click", ()=>closeModal("modalAd"));
-$("btnAddComp").addEventListener("click", ()=>openModal("modalComp"));
-$("closeComp").addEventListener("click", ()=>closeModal("modalComp"));
-
-$("modalAd").addEventListener("click",(e)=>{ if(e.target.id==="modalAd") closeModal("modalAd"); });
-$("modalComp").addEventListener("click",(e)=>{ if(e.target.id==="modalComp") closeModal("modalComp"); });
-
-function presetDates(){
-  const today = new Date();
-  const t = safeDateInputValue(today);
-  $("firstSeen").value = $("firstSeen").value || t;
-  $("lastSeen").value = $("lastSeen").value || t;
-}
-
-$("fillDemo").addEventListener("click", ()=>{
-  $("adBrand").value = "ExampleBrand";
-  $("adFormat").value = "video";
-  $("adHook").value = "Stop wasting ad budget — fix this 1 thing";
-  $("adCopy").value = "Most brands lose money because their offer is unclear. Here’s a 3-step fix + free checklist. Limited spots this week.";
-  $("adCTA").value = "Learn More";
-  $("adFunnel").value = "leadgen";
-  $("adLibUrl").value = "https://www.facebook.com/ads/library/";
-  $("adLpUrl").value = "https://example.com/landing";
-  presetDates();
-  $("adTags").value = "hook, clarity, checklist, scarcity, leadmagnet";
-  toast("Demo filled","Now click Save Ad.");
-});
-
-$("saveAd").addEventListener("click", async ()=>{
-  const brand = $("adBrand").value.trim();
-  const hook  = $("adHook").value.trim();
-  if(!brand || !hook){
-    toast("Missing fields","Brand and Hook are required.");
-    return;
-  }
-  const format = $("adFormat").value;
-  const copy = $("adCopy").value.trim();
-  const cta = $("adCTA").value.trim();
-  const funnel = $("adFunnel").value;
-  const adLibUrl = $("adLibUrl").value.trim();
-  const lpUrl = $("adLpUrl").value.trim();
-  const firstSeen = $("firstSeen").value ? new Date($("firstSeen").value).toISOString() : null;
-  const lastSeen  = $("lastSeen").value ? new Date($("lastSeen").value).toISOString() : null;
-
-  const durationDays = (firstSeen && lastSeen) ? daysBetween(firstSeen,lastSeen) : 0;
-  const tags = normalizeTags($("adTags").value);
-
-  const file = $("adImg").files[0];
-  const imageDataUrl = file ? await fileToDataUrl(file) : null;
-
-  const ad = {
-    id: cryptoId(),
-    brand, hook, copy, cta, funnel, format,
-    adLibUrl, lpUrl,
-    firstSeen, lastSeen,
-    durationDays,
-    tags,
-    imageDataUrl,
-    createdAt: nowISO(),
-    updatedAt: nowISO()
-  };
-
-  await put(STORE_ADS, ad);
-  closeModal("modalAd");
-  clearAdForm();
-  toast("Saved","Ad added to Swipe Vault.");
-  await refresh();
-});
-
-function clearAdForm(){
-  ["adBrand","adHook","adCopy","adCTA","adLibUrl","adLpUrl","adTags"].forEach(id=>$(id).value="");
-  $("adFormat").value="image";
-  $("adFunnel").value="leadgen";
-  $("adImg").value="";
-  $("firstSeen").value="";
-  $("lastSeen").value="";
-}
-
-$("saveComp").addEventListener("click", async ()=>{
-  const name = $("cName").value.trim();
-  if(!name){ toast("Missing","Competitor name required."); return; }
-  const c = {
-    id: cryptoId(),
-    name,
-    url: $("cUrl").value.trim(),
-    notes: $("cNotes").value.trim(),
-    createdAt: nowISO()
-  };
-  await put(STORE_COMPS, c);
-  closeModal("modalComp");
-  $("cName").value=""; $("cUrl").value=""; $("cNotes").value="";
-  toast("Saved","Competitor added.");
-  await refresh();
-});
-
-async function removeAd(id){
-  if(!confirm("Delete this ad from vault?")) return;
-  await del(STORE_ADS, id);
-  toast("Deleted","Ad removed.");
-  await refresh();
-}
-async function removeComp(id){
-  if(!confirm("Delete this competitor?")) return;
-  await del(STORE_COMPS, id);
-  toast("Deleted","Competitor removed.");
-  await refresh();
-}
-
-async function openDetails(id){
-  const ads = await getAll(STORE_ADS);
-  const a = ads.find(x=>x.id===id);
-  if(!a) return;
-
-  const details =
-`Brand: ${a.brand}
-Format: ${a.format}
-Funnel: ${a.funnel}
-Hook: ${a.hook}
-
-CTA: ${a.cta || "-"}
-Ad Library URL: ${a.adLibUrl || "-"}
-Landing Page: ${a.lpUrl || "-"}
-
-First seen: ${a.firstSeen ? new Date(a.firstSeen).toLocaleDateString() : "-"}
-Last seen: ${a.lastSeen ? new Date(a.lastSeen).toLocaleDateString() : "-"}
-Days running: ${a.durationDays || 0}
-
-Tags: ${(a.tags||[]).join(", ")}
-
-Copy:
-${a.copy || "-"}`;
-
-  alert(details);
-}
-
-async function copyText(id){
-  const ads = await getAll(STORE_ADS);
-  const a = ads.find(x=>x.id===id);
-  if(!a) return;
-  const t = `${a.brand}\n${a.hook}\n\n${a.copy||""}\n\nCTA: ${a.cta||""}\nFunnel: ${a.funnel}\nFormat: ${a.format}\nAd Library: ${a.adLibUrl||""}\nLanding: ${a.lpUrl||""}\nTags: ${(a.tags||[]).join(", ")}`;
-  try{
-    await navigator.clipboard.writeText(t);
-    toast("Copied","Ad text copied to clipboard.");
-  }catch{
-    toast("Copy failed","Clipboard permission blocked.");
-  }
-}
-
-/* ---------------- Filters / Search ---------------- */
-$("q").addEventListener("input", debounce(refresh, 120));
-$("sort").addEventListener("change", refresh);
-
-$("chips").addEventListener("click", (e)=>{
-  const chip = e.target.closest(".chip");
-  if(!chip) return;
-  document.querySelectorAll(".chip").forEach(c=>c.classList.remove("active"));
-  chip.classList.add("active");
-  activeFilter = chip.dataset.filter;
-  refresh();
-});
-
-/* ---------------- Export / Import / Reset ---------------- */
-$("btnExport").addEventListener("click", async ()=>{
-  const ads = await getAll(STORE_ADS);
-  const comps = await getAll(STORE_COMPS);
-  const payload = { version:1, exportedAt: nowISO(), ads, competitors: comps };
-  downloadJson(payload, `advault-export-${new Date().toISOString().slice(0,10)}.json`);
-  toast("Exported","JSON exported (offline backup).");
-});
-
-$("btnImport").addEventListener("click", ()=> $("importFile").click());
-$("importFile").addEventListener("change", async (e)=>{
-  const f = e.target.files[0];
-  if(!f) return;
-  try{
-    const text = await f.text();
-    const data = JSON.parse(text);
-    if(!data || !Array.isArray(data.ads) || !Array.isArray(data.competitors)) throw new Error("Invalid file");
-    for(const a of data.ads) await put(STORE_ADS, a);
-    for(const c of data.competitors) await put(STORE_COMPS, c);
-    toast("Imported","Data imported successfully.");
-    await refresh();
-  }catch(err){
-    toast("Import failed", err.message || "Invalid file.");
-  }finally{
-    e.target.value = "";
-  }
-});
-
-$("btnReset").addEventListener("click", async ()=>{
-  if(!confirm("This will delete ALL local data (ads + competitors). Continue?")) return;
-  await resetDB();
-  location.reload();
-});
-
-async function resetDB(){
-  return new Promise((resolve,reject)=>{
-    const r = indexedDB.deleteDatabase(DB_NAME);
-    r.onsuccess=()=>resolve(true);
-    r.onerror=()=>reject(r.error);
-  });
-}
-
-/* ---------------- Weekly PDF (offline) ---------------- */
-$("btnWeeklyPDF").addEventListener("click", async ()=>{
-  // Offline: simplest reliable approach is print-to-PDF via browser
-  // We'll open a new window with a clean report and call print().
-  const ads = await getAll(STORE_ADS);
-  const comps = await getAll(STORE_COMPS);
-  const winners = ads.filter(a=>a.durationDays>=30).sort((a,b)=>b.durationDays-a.durationDays).slice(0,20);
-  const newWeek = ads.filter(a=> Date.now()-new Date(a.createdAt).getTime() <= 7*24*60*60*1000);
-
-  const html = `
-  <html><head><meta charset="utf-8"/>
-    <title>AdVault Weekly Report</title>
-    <style>
-      body{font-family:Inter,Arial;padding:24px}
-      h1{margin:0 0 6px}
-      .muted{color:#555}
-      .k{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:16px 0}
-      .b{border:1px solid #ddd;border-radius:12px;padding:12px}
-      .t{font-size:12px;color:#555;font-weight:700}
-      .v{font-size:22px;font-weight:900;margin-top:6px}
-      .sec{margin-top:18px}
-      table{width:100%;border-collapse:collapse;margin-top:10px}
-      th,td{border-bottom:1px solid #eee;padding:10px;text-align:left;font-size:12px;vertical-align:top}
-      th{background:#fafafa;font-weight:900}
-      .tag{display:inline-block;border:1px solid #ddd;border-radius:999px;padding:3px 8px;font-weight:800;font-size:11px;margin-right:6px;margin-top:4px}
-      .win{background:#eaf7ee;border-color:#bfe9cd}
-    </style></head>
-  <body>
-    <h1>AdVault Pro — Weekly Report</h1>
-    <div class="muted">Generated: ${new Date().toLocaleString()}</div>
-    <div class="k">
-      <div class="b"><div class="t">Competitors</div><div class="v">${comps.length}</div></div>
-      <div class="b"><div class="t">Ads Saved</div><div class="v">${ads.length}</div></div>
-      <div class="b"><div class="t">Winners (≥30d)</div><div class="v">${ads.filter(a=>a.durationDays>=30).length}</div></div>
-      <div class="b"><div class="t">New This Week</div><div class="v">${newWeek.length}</div></div>
-    </div>
-
-    <div class="sec">
-      <h2>Top Winners (Longest Running)</h2>
-      <div class="muted">Use these as your “winning angles” reference.</div>
-      <table>
-        <thead><tr>
-          <th>#</th><th>Brand</th><th>Hook</th><th>Days</th><th>Format</th><th>Funnel</th><th>Tags</th>
-        </tr></thead>
-        <tbody>
-          ${winners.map((a,i)=>`
-            <tr>
-              <td>${i+1}</td>
-              <td><b>${escapeHtml(a.brand)}</b></td>
-              <td>${escapeHtml(a.hook)}</td>
-              <td><span class="tag win">${a.durationDays}d</span></td>
-              <td>${escapeHtml(a.format)}</td>
-              <td>${escapeHtml(a.funnel)}</td>
-              <td>${(a.tags||[]).slice(0,6).map(t=>`<span class="tag">${escapeHtml(t)}</span>`).join("")}</td>
-            </tr>
-          `).join("")}
-        </tbody>
-      </table>
-    </div>
-
-    <div class="sec">
-      <h2>New Captures (Last 7 Days)</h2>
-      <table>
-        <thead><tr><th>Brand</th><th>Hook</th><th>Captured</th></tr></thead>
-        <tbody>
-          ${newWeek.sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt)).slice(0,30).map(a=>`
-            <tr>
-              <td><b>${escapeHtml(a.brand)}</b></td>
-              <td>${escapeHtml(a.hook)}</td>
-              <td>${new Date(a.createdAt).toLocaleDateString()}</td>
-            </tr>
-          `).join("")}
-        </tbody>
-      </table>
-    </div>
-
-    <div class="sec">
-      <h2>Competitor Notes</h2>
-      <table>
-        <thead><tr><th>Competitor</th><th>Notes</th></tr></thead>
-        <tbody>
-          ${comps.map(c=>`
-            <tr>
-              <td><b>${escapeHtml(c.name)}</b></td>
-              <td>${escapeHtml(c.notes||"—")}</td>
-            </tr>
-          `).join("")}
-        </tbody>
-      </table>
-    </div>
-
-    <script>window.print();</script>
-  </body></html>
-  `;
-  const w = window.open("", "_blank");
-  w.document.open();
-  w.document.write(html);
-  w.document.close();
-});
-
-/* ---------------- Offline / PWA ---------------- */
-function updateOfflinePill(){
-  const online = navigator.onLine;
-  $("offlinePill").textContent = online ? "Online" : "Offline";
-  $("offlinePill").style.borderColor = online ? "rgba(34,197,94,.45)" : "rgba(245,158,11,.45)";
-  $("offlinePill").style.background = online ? "rgba(34,197,94,.10)" : "rgba(245,158,11,.10)";
-  $("offlinePill").style.color = online ? "#b8f7cd" : "#ffe2b0";
-}
-window.addEventListener("online", updateOfflinePill);
-window.addEventListener("offline", updateOfflinePill);
-
-/* Inline Service Worker + Manifest (single-file) */
-(async function initPWA(){
-  // Manifest via blob
-  const manifest = {
-    name:"AdVault Pro",
-    short_name:"AdVault",
-    start_url:"./",
-    display:"standalone",
-    background_color:"#0b1220",
-    theme_color:"#2563eb",
-    icons:[
-      { src: svgIconDataUrl("🗂️","#2563eb"), sizes:"192x192", type:"image/svg+xml" },
-      { src: svgIconDataUrl("🗂️","#2563eb"), sizes:"512x512", type:"image/svg+xml" }
-    ]
-  };
-  const manBlob = new Blob([JSON.stringify(manifest)], {type:"application/manifest+json"});
-  const manUrl = URL.createObjectURL(manBlob);
-  const link = document.createElement("link");
-  link.rel = "manifest";
-  link.href = manUrl;
-  document.head.appendChild(link);
-
-  // Service worker via blob (cache app shell)
-  if("serviceWorker" in navigator){
-    const swCode = `
-      const CACHE = "advault-cache-v1";
-      self.addEventListener("install", (e)=>{
-        e.waitUntil(caches.open(CACHE).then(c=>c.addAll(["./"])));
-        self.skipWaiting();
-      });
-      self.addEventListener("activate",(e)=>{ e.waitUntil(self.clients.claim()); });
-      self.addEventListener("fetch",(e)=>{
-        const req = e.request;
-        e.respondWith(
-          caches.match(req).then(cached=>{
-            return cached || fetch(req).then(res=>{
-              const copy = res.clone();
-              caches.open(CACHE).then(c=>c.put(req, copy)).catch(()=>{});
-              return res;
-            }).catch(()=>cached);
-          })
-        );
-      });
-    `;
-    const swBlob = new Blob([swCode], {type:"text/javascript"});
-    const swUrl = URL.createObjectURL(swBlob);
-    try{ await navigator.serviceWorker.register(swUrl); }catch(e){}
-  }
-})();
-
-/* ---------------- Helpers ---------------- */
-function cryptoId(){
-  if(window.crypto && crypto.getRandomValues){
-    const a = new Uint32Array(4); crypto.getRandomValues(a);
-    return [...a].map(x=>x.toString(16)).join("-");
-  }
-  return String(Date.now())+"-"+Math.random().toString(16).slice(2);
-}
-function debounce(fn,ms){
-  let t; return (...args)=>{ clearTimeout(t); t=setTimeout(()=>fn(...args),ms); };
-}
-function escapeHtml(s){
-  return String(s||"").replace(/[&<>"']/g, m=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;" }[m]));
-}
-function escapeAttr(s){ return escapeHtml(s); }
-
-function downloadJson(obj, filename){
-  const blob = new Blob([JSON.stringify(obj,null,2)],{type:"application/json"});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href=url; a.download=filename;
-  document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(()=>URL.revokeObjectURL(url), 500);
-}
-
-function fileToDataUrl(file){
-  return new Promise((resolve,reject)=>{
-    const r = new FileReader();
-    r.onload=()=>resolve(r.result);
-    r.onerror=()=>reject(r.error);
-    r.readAsDataURL(file);
-  });
-}
-
-function svgIconDataUrl(emoji, bg){
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512">
-    <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="${bg}"/><stop offset="1" stop-color="#06b6d4"/></linearGradient></defs>
-    <rect width="512" height="512" rx="120" fill="url(#g)"/>
-    <text x="50%" y="54%" text-anchor="middle" dominant-baseline="middle" font-size="240">${emoji}</text>
-  </svg>`;
-  return "data:image/svg+xml,"+encodeURIComponent(svg);
-}
-
-/* ---------------- Boot ---------------- */
-(async function(){
-  updateOfflinePill();
-  db = await openDB();
-  await seedIfEmpty();
-  await refresh();
-})();
-
-async function seedIfEmpty(){
-  const ads = await getAll(STORE_ADS);
-  const comps = await getAll(STORE_COMPS);
-  if(ads.length || comps.length) return;
-
-  // Small, tasteful demo seed so first-time user says "WOW"
-  await put(STORE_COMPS, {id:cryptoId(), name:"Competitor A", url:"https://www.facebook.com/ads/library/", notes:"Tracks seasonal offers; uses UGC videos & scarcity.", createdAt:nowISO()});
-  await put(STORE_COMPS, {id:cryptoId(), name:"Competitor B", url:"https://www.facebook.com/ads/library/", notes:"Strong proof + testimonials; long-running lead magnet.", createdAt:nowISO()});
-
-  const today = new Date();
-  const first = new Date(Date.now()-45*24*60*60*1000);
-  await put(STORE_ADS, {
-    id:cryptoId(),
-    brand:"Competitor B",
-    format:"video",
-    funnel:"leadgen",
-    hook:"Get 50 qualified leads/week without increasing ad spend",
-    copy:"Free checklist + 7-min walkthrough. Proof inside. Limited slots for audits this week.",
-    cta:"Learn More",
-    adLibUrl:"https://www.facebook.com/ads/library/",
-    lpUrl:"https://example.com",
-    firstSeen:first.toISOString(),
-    lastSeen:today.toISOString(),
-    durationDays:45,
-    tags:["leadmagnet","proof","scarcity","audit"],
-    imageDataUrl:null,
-    createdAt:nowISO(),
-    updatedAt:nowISO()
-  });
-  toast("Welcome","Demo data added. Replace with your real captures.");
-}
-</script>
+  <!-- Floating WhatsApp -->
+  <a class="wa" href="https://wa.me/971505709598" target="_blank" rel="noopener" aria-label="WhatsApp">
+    <i class="fa-brands fa-whatsapp"></i>
+  </a>
+
+  <script src="app.js" defer></script>
 </body>
 </html>
