@@ -3,556 +3,553 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <meta name="description" content="Premium Real Estate Agent Website — Listings, valuation, booking, calculators, testimonials. Fast, mobile-first, offline-ready."/>
-  <meta name="keywords" content="real estate agent, homes for sale, property listings, home valuation, buy sell rent"/>
-  <meta name="theme-color" content="#0b1220"/>
-  <title>Meggha Bhatia — Dubai Real Estate Specialist (Premium)</title>
+  <meta name="description" content="Premium Real Estate Agent Website — Listings, Map Search, Lead Capture, Offline PWA"/>
+  <title>Agent Name • Real Estate</title>
 
   <!-- Open Graph -->
-  <meta property="og:title" content="Meggha Bhatia — Dubai Real Estate Specialist"/>
-  <meta property="og:description" content="Luxury off-plan & ready properties. Book viewing, get valuation, download brochures."/>
+  <meta property="og:title" content="Agent Name • Real Estate"/>
+  <meta property="og:description" content="Find homes fast. Book viewings. Get free valuation. Trusted local expert."/>
   <meta property="og:type" content="website"/>
-  <meta property="og:image" content="https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=1200"/>
+
+  <meta name="theme-color" content="#0b1220"/>
 
   <!-- Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 
-  <!-- Icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
   <!-- PWA -->
   <link rel="manifest" href="manifest.json"/>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml"/>
 
-  <!-- Styles -->
-  <link rel="stylesheet" href="styles.css"/>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
 
-  <!-- Schema: RealEstateAgent -->
-  <script type="application/ld+json">
+  <!-- Schema (basic) -->
+  <script type="application/ld+json" id="schemaAgent">
   {
-    "@context": "https://schema.org",
-    "@type": "RealEstateAgent",
-    "name": "Meggha Bhatia",
-    "image": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=800",
-    "url": "https://realestatewithmeggha.com",
-    "telephone": "+971505709598",
-    "address": {
-      "@type": "PostalAddress",
-      "addressLocality": "Dubai",
-      "addressRegion": "Dubai",
-      "addressCountry": "AE"
-    },
-    "areaServed": ["Dubai", "Downtown Dubai", "Dubai Marina", "Palm Jumeirah", "Dubai Creek Harbour"],
-    "sameAs": ["https://www.linkedin.com/"]
+    "@context":"https://schema.org",
+    "@type":"RealEstateAgent",
+    "name":"Agent Name",
+    "telephone":"+1-555-123-4567",
+    "address":{"@type":"PostalAddress","addressLocality":"Your City","addressRegion":"Your State","addressCountry":"US"},
+    "url":"https://example.com"
   }
   </script>
-</head>
 
-<body>
-  <!-- Loading -->
-  <div id="loader" class="loader">
-    <div class="loader-card">
-      <div class="loader-logo"><i class="fa-solid fa-building"></i></div>
-      <div class="loader-title">MEGGHA BHATIA</div>
-      <div class="loader-sub">Dubai Real Estate Specialist</div>
-      <div class="loader-bar"><span></span></div>
-      <div class="loader-hint">Loading premium experience…</div>
-    </div>
-  </div>
+  <div class="scroll-progress" id="scrollProgress"></div>
 
-  <!-- Announcement -->
-  <div class="announce" id="announce">
-    <div class="container announce-row">
-      <div class="announce-left">
-        <span class="dot"></span>
-        <span><b>2026 Launch Offers:</b> Early-bird payment plans + exclusive inventory access</span>
-      </div>
-      <button class="announce-x" id="announceClose" aria-label="Close">✕</button>
-    </div>
-  </div>
-
-  <!-- Navbar -->
-  <header class="nav" id="nav">
-    <div class="container nav-row">
-      <a class="brand" href="#home" aria-label="Home">
-        <div class="brand-mark"><i class="fa-solid fa-building"></i></div>
-        <div class="brand-text">
-          <div class="brand-title">Meggha Bhatia</div>
-          <div class="brand-sub">Dubai Real Estate • Luxury Off‑Plan</div>
-        </div>
+  <!-- NAV -->
+  <header class="nav-wrap" id="top">
+    <nav class="nav container">
+      <a class="brand" href="#top">
+        <span class="brand-mark">🏡</span>
+        <span class="brand-text">
+          <span class="brand-title">Agent Name</span>
+          <span class="brand-sub">Local Real Estate Specialist</span>
+        </span>
       </a>
 
-      <nav class="menu" id="menu">
-        <a href="#listings" class="link">Listings</a>
-        <a href="#areas" class="link">Areas</a>
-        <a href="#services" class="link">Services</a>
-        <a href="#tools" class="link">Calculators</a>
-        <a href="#reviews" class="link">Reviews</a>
-        <a href="#contact" class="link">Contact</a>
-      </nav>
-
-      <div class="nav-cta">
-        <button class="btn ghost" id="themeToggle" title="Toggle theme"><i class="fa-solid fa-moon"></i></button>
-        <a class="btn ghost" href="tel:+971505709598"><i class="fa-solid fa-phone"></i> Call</a>
-        <a class="btn primary" id="btnBookTop" href="#contact"><i class="fa-solid fa-calendar-check"></i> Book Viewing</a>
-        <button class="burger" id="burger" aria-label="Menu"><span></span><span></span><span></span></button>
+      <div class="nav-links" id="navLinks">
+        <a href="#listings">Listings</a>
+        <a href="#mapSection">Map</a>
+        <a href="#neighborhoods">Areas</a>
+        <a href="#services">Services</a>
+        <a href="#testimonials">Reviews</a>
+        <a href="#mortgageSection">Calculator</a>
+        <a href="#contact">Contact</a>
       </div>
-    </div>
 
-    <!-- Mobile Drawer -->
+      <div class="nav-actions">
+        <a class="btn btn-ghost" data-agent-call-link href="tel:+15551234567">📞 <span class="hide-sm" data-agent-phone>+1 (555) 123-4567</span></a>
+        <a class="btn btn-wa" data-agent-wa-link href="https://wa.me/15551234567" target="_blank" rel="noopener">💬 <span class="hide-sm">WhatsApp</span></a>
+        <button class="btn btn-primary" data-cta="consult">Book Consultation</button>
+
+        <button class="btn btn-outline" id="installAppBtn" style="display:none;">⬇ Install</button>
+        <button class="nav-burger" id="navBurger" aria-label="Menu"><span></span><span></span><span></span></button>
+      </div>
+    </nav>
+
     <div class="drawer" id="drawer">
-      <div class="drawer-inner">
-        <a href="#listings" class="dlink">Listings</a>
-        <a href="#areas" class="dlink">Areas</a>
-        <a href="#services" class="dlink">Services</a>
-        <a href="#tools" class="dlink">Calculators</a>
-        <a href="#reviews" class="dlink">Reviews</a>
-        <a href="#contact" class="dlink">Contact</a>
-        <div class="drawer-actions">
-          <a class="btn ghost" href="tel:+971505709598"><i class="fa-solid fa-phone"></i> Call Now</a>
-          <a class="btn primary" href="https://wa.me/971505709598" target="_blank" rel="noopener"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a>
-        </div>
+      <a href="#listings" class="drawer-link">Listings</a>
+      <a href="#mapSection" class="drawer-link">Map</a>
+      <a href="#neighborhoods" class="drawer-link">Areas</a>
+      <a href="#services" class="drawer-link">Services</a>
+      <a href="#testimonials" class="drawer-link">Reviews</a>
+      <a href="#mortgageSection" class="drawer-link">Calculator</a>
+      <a href="#contact" class="drawer-link">Contact</a>
+      <div class="drawer-cta">
+        <a class="btn btn-ghost" data-agent-call-link href="tel:+15551234567">📞 Call</a>
+        <a class="btn btn-wa" data-agent-wa-link href="https://wa.me/15551234567" target="_blank" rel="noopener">💬 WhatsApp</a>
+        <button class="btn btn-primary" data-cta="consult">Consult</button>
+        <button class="btn btn-outline" data-cta="valuation">Valuation</button>
       </div>
     </div>
   </header>
 
-  <!-- Scroll progress -->
-  <div class="scrollbar" id="scrollbar"></div>
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-bg"></div>
+    <div class="container hero-grid">
+      <div class="hero-copy">
+        <div class="hero-badge">⭐ Trusted • Fast Response • Local Expert</div>
+        <h1>Find your next home—<span class="grad">faster & smarter</span>.</h1>
+        <p>Premium listings, real market insights, and a simple buying/selling process. Built mobile‑first with offline lead capture.</p>
 
-  <!-- Hero -->
-  <main id="home" class="hero">
-    <div class="hero-bg">
-      <div class="mesh"></div>
-      <div class="noise"></div>
-      <div class="gridlines"></div>
-    </div>
-
-    <div class="container hero-row">
-      <div class="hero-left">
-        <div class="chip">
-          <i class="fa-solid fa-certificate"></i> RERA Certified • Founder @bookyourghar • GUC Alumni
-        </div>
-
-        <h1 class="h1">
-          Buy, Invest & Grow in <span class="grad">Dubai Real Estate</span> —
-          <span class="type" id="type"></span><span class="cursor">|</span>
-        </h1>
-
-        <p class="p">
-          Premium off‑plan launches, luxury ready homes, and investor‑first guidance with transparent process.
-          Get curated listings, ROI insights, and end‑to‑end support.
-        </p>
-
-        <div class="hero-actions">
-          <a class="btn primary lg" href="#listings"><i class="fa-solid fa-magnifying-glass"></i> Search Properties</a>
-          <a class="btn ghost lg" href="#tools"><i class="fa-solid fa-calculator"></i> ROI Calculator</a>
-          <a class="btn outline lg" href="https://wa.me/971505709598" target="_blank" rel="noopener"><i class="fa-brands fa-whatsapp"></i> WhatsApp Now</a>
+        <div class="hero-cta">
+          <button class="btn btn-primary btn-lg" data-cta="consult">📅 Book Free Consultation</button>
+          <button class="btn btn-outline btn-lg" data-cta="valuation">🏷️ Get Free Home Valuation</button>
+          <a class="btn btn-ghost btn-lg" href="#listings">🔎 Browse Listings</a>
+          <a class="btn btn-ghost btn-lg" href="#mapSection">🗺️ Map Search</a>
         </div>
 
         <div class="trust-row">
-          <div class="trust">
-            <div class="trust-k">1,000+</div>
-            <div class="trust-t">Client conversations</div>
-          </div>
-          <div class="trust">
-            <div class="trust-k">25%+</div>
-            <div class="trust-t">Avg investor ROI focus</div>
-          </div>
-          <div class="trust">
-            <div class="trust-k">24/7</div>
-            <div class="trust-t">WhatsApp support</div>
-          </div>
+          <div class="trust-item">✅ Licensed</div>
+          <div class="trust-item">✅ 5-Star Reviews</div>
+          <div class="trust-item">✅ Video Tours</div>
+          <div class="trust-item">✅ Buyer + Seller Support</div>
         </div>
 
-        <div class="badge-row">
-          <span class="badge"><i class="fa-solid fa-shield"></i> Verified process</span>
-          <span class="badge"><i class="fa-solid fa-camera"></i> Pro media</span>
-          <span class="badge"><i class="fa-solid fa-file-contract"></i> Paperwork support</span>
+        <div class="mini-tools">
+          <div class="mini-tool">
+            <div class="mt-title">Offline Ready</div>
+            <div class="mt-sub">Forms queue locally when no internet</div>
+          </div>
+          <div class="mini-tool">
+            <div class="mt-title">Import Listings</div>
+            <div class="mt-sub">CSV/JSON upload → instant site update</div>
+          </div>
+          <div class="mini-tool">
+            <div class="mt-title">Map View</div>
+            <div class="mt-sub">Interactive pins + open property</div>
+          </div>
         </div>
       </div>
 
-      <div class="hero-right">
-        <div class="hero-card">
-          <div class="hero-card-top">
-            <div class="mini-avatar">MB</div>
-            <div>
-              <div class="mini-title">Meggha Bhatia</div>
-              <div class="mini-sub">Dubai Real Estate Specialist</div>
+      <div class="hero-card">
+        <div class="hero-card-top">
+          <div class="hero-card-title">Quick Lead Form</div>
+          <div class="hero-card-sub">Get a shortlist in 15 minutes</div>
+        </div>
+
+        <form class="form" id="consultForm">
+          <div class="row2">
+            <div class="field">
+              <label>Full Name *</label>
+              <input required name="name" placeholder="Your name"/>
             </div>
-            <span class="pill ok"><i class="fa-solid fa-circle"></i> Online</span>
+            <div class="field">
+              <label>Phone *</label>
+              <input required name="phone" placeholder="+1 555..."/>
+            </div>
           </div>
-
-          <div class="hero-card-img" role="img" aria-label="Dubai skyline image"></div>
-
-          <div class="hero-card-actions">
-            <button class="btn ghost" id="btnValuation"><i class="fa-solid fa-chart-line"></i> Get Valuation</button>
-            <button class="btn primary" id="btnBrochure"><i class="fa-solid fa-download"></i> Download Guide</button>
+          <div class="row2">
+            <div class="field">
+              <label>Email</label>
+              <input type="email" name="email" placeholder="you@email.com"/>
+            </div>
+            <div class="field">
+              <label>I'm a *</label>
+              <select required name="role">
+                <option value="">Select</option>
+                <option>Buyer</option>
+                <option>Seller</option>
+                <option>Investor</option>
+                <option>Renter</option>
+              </select>
+            </div>
           </div>
-
-          <div class="hero-card-foot">
-            <div class="tiny"><i class="fa-solid fa-star"></i> 5.0 Client Rating</div>
-            <div class="tiny"><i class="fa-solid fa-location-dot"></i> Dubai, UAE</div>
+          <div class="field">
+            <label>Message</label>
+            <textarea name="message" rows="3" placeholder="Budget, preferred area, timeline..."></textarea>
           </div>
-        </div>
+          <button class="btn btn-primary btn-block" type="submit">Submit</button>
+          <p class="fine">No spam. Quick response guaranteed.</p>
+        </form>
       </div>
     </div>
+  </section>
 
-    <div class="scroll-ind">
-      <span>Scroll</span><i class="fa-solid fa-chevron-down"></i>
-    </div>
-  </main>
+  <!-- STATS -->
+  <section class="stats container">
+    <div class="stat"><div class="stat-num">500+</div><div class="stat-lbl">Showings Arranged</div></div>
+    <div class="stat"><div class="stat-num">$25M+</div><div class="stat-lbl">Sales Volume</div></div>
+    <div class="stat"><div class="stat-num">4.9★</div><div class="stat-lbl">Avg Rating</div></div>
+    <div class="stat"><div class="stat-num">10+</div><div class="stat-lbl">Years Experience</div></div>
+  </section>
 
-  <!-- Sticky CTA bar (Mobile) -->
-  <div class="stickybar" id="stickybar">
-    <a href="tel:+971505709598" class="sbtn"><i class="fa-solid fa-phone"></i><span>Call</span></a>
-    <a href="https://wa.me/971505709598" target="_blank" rel="noopener" class="sbtn"><i class="fa-brands fa-whatsapp"></i><span>WhatsApp</span></a>
-    <a href="#contact" class="sbtn primary"><i class="fa-solid fa-calendar-check"></i><span>Book</span></a>
-  </div>
-
-  <!-- Listings -->
-  <section id="listings" class="section">
+  <!-- LISTINGS -->
+  <section class="section" id="listings">
     <div class="container">
-      <div class="sec-head">
+      <div class="section-head">
         <div>
-          <div class="kicker">Listings</div>
-          <h2 class="h2">Search Premium Properties</h2>
-          <p class="muted">Fast filters, favorites, brochures. // TODO: Connect to IDX/MLS feed</p>
+          <h2>Listings</h2>
+          <p>Advanced search + favorites + share. Offline-ready browsing.</p>
         </div>
-        <div class="sec-actions">
-          <button class="btn ghost" id="btnFavorites"><i class="fa-solid fa-heart"></i> Favorites (<span id="favCount">0</span>)</button>
-          <button class="btn ghost" id="btnCompare"><i class="fa-solid fa-scale-balanced"></i> Compare</button>
+        <div class="row">
+          <button class="btn btn-ghost" id="favoritesBtn">❤️ Favorites</button>
+          <button class="btn btn-outline" id="btnExportData">⬇ Export Data</button>
+          <button class="btn btn-outline" id="btnOpenImport">⬆ Import Listings</button>
         </div>
       </div>
 
       <div class="filters">
-        <div class="f">
-          <label>Keyword</label>
-          <input id="qListing" placeholder="e.g., Marina, Palm, Off-plan, Burj view"/>
-        </div>
-        <div class="f">
-          <label>Type</label>
-          <select id="fType">
+        <div class="f"><label>Search</label><input id="searchInput" placeholder="City, area, title, zip..."/></div>
+        <div class="f"><label>Type</label>
+          <select id="filterType">
             <option value="any">Any</option>
-            <option value="apartment">Apartment</option>
-            <option value="villa">Villa</option>
+            <option value="house">House</option>
+            <option value="condo">Condo</option>
             <option value="townhouse">Townhouse</option>
           </select>
         </div>
-        <div class="f">
-          <label>Area</label>
-          <select id="fArea">
+        <div class="f"><label>Beds</label>
+          <select id="filterBeds">
             <option value="any">Any</option>
-            <option value="downtown">Downtown</option>
-            <option value="marina">Dubai Marina</option>
-            <option value="palm">Palm Jumeirah</option>
-            <option value="creek">Dubai Creek</option>
+            <option value="1">1+</option><option value="2">2+</option>
+            <option value="3">3+</option><option value="4">4+</option>
           </select>
         </div>
-        <div class="f">
-          <label>Budget (AED)</label>
-          <select id="fBudget">
-            <option value="any">Any</option>
-            <option value="0-1000000">Below 1M</option>
-            <option value="1000000-2000000">1M – 2M</option>
-            <option value="2000000-5000000">2M – 5M</option>
-            <option value="5000000-999999999">5M+</option>
+        <div class="f"><label>Min Price</label><input id="filterMinPrice" type="number" placeholder="0"/></div>
+        <div class="f"><label>Max Price</label><input id="filterMaxPrice" type="number" placeholder="1000000"/></div>
+        <div class="f"><label>Sort</label>
+          <select id="filterSort">
+            <option value="newest">Newest</option>
+            <option value="price_asc">Price ↑</option>
+            <option value="price_desc">Price ↓</option>
+            <option value="sqft_desc">Sqft ↓</option>
           </select>
-        </div>
-        <div class="f">
-          <label>Beds</label>
-          <select id="fBeds">
-            <option value="any">Any</option>
-            <option value="studio">Studio</option>
-            <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4+</option>
-          </select>
-        </div>
-
-        <div class="f fbtns">
-          <button class="btn primary" id="btnSearch"><i class="fa-solid fa-magnifying-glass"></i> Search</button>
-          <button class="btn ghost" id="btnClear"><i class="fa-solid fa-rotate-left"></i> Reset</button>
         </div>
       </div>
 
-      <div class="cards" id="listingGrid"></div>
+      <div class="grid-listings" id="listingsGrid"></div>
+      <div class="hint muted">Tip: Click a card → details modal. Save favorites. Use Map view below to browse by location.</div>
+    </div>
+  </section>
 
-      <div class="center mt">
-        <button class="btn ghost" id="btnLoadMore"><i class="fa-solid fa-plus"></i> Load more</button>
+  <!-- MAP -->
+  <section class="section" id="mapSection">
+    <div class="container">
+      <div class="section-head">
+        <div>
+          <h2>Map Search</h2>
+          <p>Interactive map with property pins. Click a pin to open details.</p>
+        </div>
+        <div class="row">
+          <button class="btn btn-ghost" id="btnRecenterMap">🎯 Recenter</button>
+          <button class="btn btn-outline" id="btnShowAllOnMap">📌 Show All</button>
+        </div>
+      </div>
+
+      <div class="card map-card">
+        <div class="map-toolbar">
+          <div class="map-chip"><span class="dot ok"></span> For Sale</div>
+          <div class="map-chip"><span class="dot warn"></span> For Rent</div>
+          <div class="map-chip"><span class="dot neutral"></span> Others</div>
+          <div class="map-note muted">Offline: map tiles may not load, but pins & data still work.</div>
+        </div>
+        <div id="map" class="map"></div>
       </div>
     </div>
   </section>
 
-  <!-- Areas / Neighborhood expertise -->
-  <section id="areas" class="section alt">
+  <!-- NEIGHBORHOODS -->
+  <section class="section" id="neighborhoods">
     <div class="container">
-      <div class="sec-head">
+      <div class="section-head">
         <div>
-          <div class="kicker">Areas</div>
-          <h2 class="h2">Neighborhood Expertise</h2>
-          <p class="muted">Local insights + trends (SEO-friendly). // TODO: Connect to real market data</p>
+          <h2>Neighborhood Expertise</h2>
+          <p>Local guides for SEO + trust (demo data included).</p>
         </div>
       </div>
-
-      <div class="tabs" id="areaTabs">
-        <button class="tab active" data-tab="downtown">Downtown</button>
-        <button class="tab" data-tab="marina">Dubai Marina</button>
-        <button class="tab" data-tab="palm">Palm Jumeirah</button>
-        <button class="tab" data-tab="creek">Dubai Creek</button>
-      </div>
-
-      <div class="tabpanes">
-        <div class="pane active" id="pane-downtown"></div>
-        <div class="pane" id="pane-marina"></div>
-        <div class="pane" id="pane-palm"></div>
-        <div class="pane" id="pane-creek"></div>
-      </div>
+      <div class="grid-neighborhoods" id="neighborhoodGrid"></div>
     </div>
   </section>
 
-  <!-- Services -->
-  <section id="services" class="section">
+  <!-- SERVICES -->
+  <section class="section" id="services">
     <div class="container">
-      <div class="sec-head">
+      <div class="section-head">
         <div>
-          <div class="kicker">Services</div>
-          <h2 class="h2">Buy • Sell • Invest with Confidence</h2>
-          <p class="muted">Clear process + trust signals = higher conversion.</p>
+          <h2>Services</h2>
+          <p>Clear outcomes. Simple process. High trust.</p>
         </div>
       </div>
 
-      <div class="svc">
-        <div class="svc-card">
-          <div class="svc-ic"><i class="fa-solid fa-magnifying-glass-location"></i></div>
-          <h3>Buyer Advisory</h3>
-          <p class="muted">Shortlisting, site visits, negotiation, legal paperwork, and handover support.</p>
-          <ul>
-            <li><i class="fa-solid fa-check"></i> Curated listings</li>
-            <li><i class="fa-solid fa-check"></i> Offer strategy</li>
-            <li><i class="fa-solid fa-check"></i> Financing guidance</li>
-          </ul>
-          <a class="btn ghost" href="#contact">Book buyer call <i class="fa-solid fa-arrow-right"></i></a>
+      <div class="grid-services">
+        <div class="card service">
+          <div class="icon">🏠</div>
+          <h3>Buy</h3>
+          <p>Shortlist, tours, negotiation, offer strategy, closing support.</p>
+          <ul><li>Area + pricing strategy</li><li>Private showings</li><li>Paperwork support</li></ul>
+          <button class="btn btn-primary" data-cta="consult">Start Buying</button>
         </div>
 
-        <div class="svc-card featured">
-          <div class="tagpop">Most Requested</div>
-          <div class="svc-ic"><i class="fa-solid fa-city"></i></div>
-          <h3>Off‑Plan Specialist</h3>
-          <p class="muted">Launch inventory, payment plans, exit strategies, yield analysis—end to end.</p>
-          <ul>
-            <li><i class="fa-solid fa-check"></i> Pre‑launch access</li>
-            <li><i class="fa-solid fa-check"></i> ROI & yield math</li>
-            <li><i class="fa-solid fa-check"></i> Golden visa guidance</li>
-          </ul>
-          <a class="btn primary" href="https://wa.me/971505709598" target="_blank" rel="noopener">WhatsApp for launches <i class="fa-solid fa-arrow-right"></i></a>
+        <div class="card service">
+          <div class="icon">🏷️</div>
+          <h3>Sell</h3>
+          <p>Pricing plan, pro photos, marketing, and fast offers.</p>
+          <ul><li>Free valuation</li><li>Listing optimization</li><li>Offer handling</li></ul>
+          <button class="btn btn-outline" data-cta="valuation">Get Valuation</button>
         </div>
 
-        <div class="svc-card">
-          <div class="svc-ic"><i class="fa-solid fa-hand-holding-dollar"></i></div>
-          <h3>Seller Strategy</h3>
-          <p class="muted">Pricing, staging, professional media, lead handling, and closing support.</p>
-          <ul>
-            <li><i class="fa-solid fa-check"></i> Listing optimization</li>
-            <li><i class="fa-solid fa-check"></i> Negotiation support</li>
-            <li><i class="fa-solid fa-check"></i> Faster sale plan</li>
-          </ul>
-          <a class="btn ghost" href="#contact">Get valuation <i class="fa-solid fa-arrow-right"></i></a>
-        </div>
-      </div>
-
-      <div class="process">
-        <div class="kicker">How it works</div>
-        <div class="steps">
-          <div class="step"><div class="n">1</div><div><b>Consult</b><div class="muted">Understand budget, goals, timeline.</div></div></div>
-          <div class="step"><div class="n">2</div><div><b>Shortlist</b><div class="muted">Curated options + tours.</div></div></div>
-          <div class="step"><div class="n">3</div><div><b>Close</b><div class="muted">Offer + paperwork + transfer.</div></div></div>
-          <div class="step"><div class="n">4</div><div><b>Aftercare</b><div class="muted">Handover + rent/resale support.</div></div></div>
+        <div class="card service">
+          <div class="icon">📈</div>
+          <h3>Invest</h3>
+          <p>ROI-first deals, rent yield planning, long-term strategy.</p>
+          <ul><li>ROI planning</li><li>Tenant demand areas</li><li>Exit strategy</li></ul>
+          <button class="btn btn-ghost" data-cta="consult">Talk Investment</button>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Tools / Calculators -->
-  <section id="tools" class="section alt">
+  <!-- TESTIMONIALS -->
+  <section class="section" id="testimonials">
     <div class="container">
-      <div class="sec-head">
+      <div class="section-head">
         <div>
-          <div class="kicker">Tools</div>
-          <h2 class="h2">Mortgage + ROI Calculators</h2>
-          <p class="muted">Engagement tools increase inquiries & time-on-site.</p>
+          <h2>Reviews</h2>
+          <p>Carousel is functional. Replace with real reviews/videos anytime.</p>
+        </div>
+        <div class="row">
+          <button class="btn btn-ghost" id="testPrev">←</button>
+          <button class="btn btn-ghost" id="testNext">→</button>
         </div>
       </div>
 
-      <div class="toolgrid">
-        <div class="tool">
-          <h3><i class="fa-solid fa-calculator"></i> Mortgage / EMI</h3>
-          <div class="grid2">
-            <div class="f"><label>Property Price (AED)</label><input id="mPrice" type="number" value="1800000"></div>
-            <div class="f"><label>Down Payment (%)</label><input id="mDown" type="number" value="20"></div>
-            <div class="f"><label>Interest Rate (%)</label><input id="mRate" type="number" value="4.5" step="0.1"></div>
-            <div class="f"><label>Tenure (years)</label><input id="mYears" type="number" value="25"></div>
+      <div class="testimonials">
+        <div class="track" id="testimonialsTrack"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CALCULATOR -->
+  <section class="section" id="mortgageSection">
+    <div class="container">
+      <div class="section-head">
+        <div>
+          <h2>Mortgage Calculator</h2>
+          <p>Instant EMI estimate (boosts conversion & time-on-site).</p>
+        </div>
+      </div>
+
+      <div class="card calc">
+        <form class="form" id="mortgageForm">
+          <div class="row3">
+            <div class="field"><label>Home Price</label><input id="loanAmount" type="number" value="600000"/></div>
+            <div class="field"><label>Down Payment</label><input id="downPayment" type="number" value="60000"/></div>
+            <div class="field"><label>Interest Rate (%)</label><input id="interestRate" type="number" step="0.1" value="6.8"/></div>
+            <div class="field"><label>Loan Years</label><input id="loanYears" type="number" value="30"/></div>
           </div>
-          <button class="btn primary" id="btnEMI">Calculate EMI</button>
-          <div class="result" id="emiRes"></div>
-          <!-- TODO: Connect to your backend for real bank rates -->
-        </div>
 
-        <div class="tool">
-          <h3><i class="fa-solid fa-chart-line"></i> Rental ROI</h3>
-          <div class="grid2">
-            <div class="f"><label>Purchase Price (AED)</label><input id="rPrice" type="number" value="1200000"></div>
-            <div class="f"><label>Annual Rent (AED)</label><input id="rRent" type="number" value="90000"></div>
-            <div class="f"><label>Annual Costs (AED)</label><input id="rCost" type="number" value="12000"></div>
-            <div class="f"><label>Appreciation (%/yr)</label><input id="rApp" type="number" value="5" step="0.1"></div>
+          <div class="calc-out">
+            <div class="out"><div class="k">Monthly</div><div class="v" id="emiOut">$0</div></div>
+            <div class="out"><div class="k">Total Payment</div><div class="v" id="totalPayOut">$0</div></div>
+            <div class="out"><div class="k">Total Interest</div><div class="v" id="totalIntOut">$0</div></div>
           </div>
-          <button class="btn primary" id="btnROI">Calculate ROI</button>
-          <div class="result" id="roiRes"></div>
-          <!-- TODO: Connect to your backend for real rental comps -->
-        </div>
+
+          <div class="row">
+            <button class="btn btn-primary" type="submit">Recalculate</button>
+            <button class="btn btn-ghost" type="button" data-cta="consult">Talk to Agent</button>
+          </div>
+        </form>
       </div>
     </div>
   </section>
 
-  <!-- Reviews -->
-  <section id="reviews" class="section">
+  <!-- CONTACT -->
+  <section class="section" id="contact">
     <div class="container">
-      <div class="sec-head">
+      <div class="section-head">
         <div>
-          <div class="kicker">Reviews</div>
-          <h2 class="h2">Clients Say “Best Experience”</h2>
-          <p class="muted">Trust = conversion. Add real screenshots/video later.</p>
+          <h2>Contact</h2>
+          <p>Forms are offline-ready. Leads are queued if internet is down.</p>
         </div>
       </div>
 
-      <div class="carousel">
-        <button class="carbtn" id="prev"><i class="fa-solid fa-chevron-left"></i></button>
-        <div class="cartrack" id="cartrack"></div>
-        <button class="carbtn" id="next"><i class="fa-solid fa-chevron-right"></i></button>
-      </div>
-    </div>
-  </section>
+      <div class="grid-contact">
+        <div class="card">
+          <h3>Request Showing</h3>
+          <p class="muted">For a specific listing: open details → “Book Showing”.</p>
 
-  <!-- Contact + Booking + Valuation -->
-  <section id="contact" class="section alt">
-    <div class="container">
-      <div class="sec-head">
-        <div>
-          <div class="kicker">Contact</div>
-          <h2 class="h2">Book a Viewing / Get Valuation</h2>
-          <p class="muted">Forms offline bhi save hote hain (PWA). // TODO: Connect to CRM + email</p>
-        </div>
-      </div>
-
-      <div class="contactgrid">
-        <div class="cardbox">
-          <h3>Quick Booking</h3>
-          <form id="bookingForm" class="form">
-            <div class="grid2">
-              <div class="f"><label>Name *</label><input required name="name" placeholder="Your name"/></div>
-              <div class="f"><label>Phone *</label><input required name="phone" placeholder="+971..."/></div>
-              <div class="f"><label>Email</label><input name="email" type="email" placeholder="you@email.com"/></div>
-              <div class="f"><label>Service</label>
-                <select name="service">
-                  <option>Book Viewing</option>
-                  <option>Off-plan Consultation</option>
-                  <option>Sell My Property</option>
-                  <option>Investment Advisory</option>
-                </select>
-              </div>
+          <form class="form" id="showingForm">
+            <div class="row2">
+              <div class="field"><label>Name *</label><input required name="name" placeholder="Your name"/></div>
+              <div class="field"><label>Phone *</label><input required name="phone" placeholder="+1 555..."/></div>
             </div>
-            <div class="f"><label>Message</label><textarea name="message" rows="4" placeholder="Area, budget, beds, timeline…"></textarea></div>
-            <div class="actionsRow">
-              <button class="btn primary" type="submit"><i class="fa-solid fa-paper-plane"></i> Submit</button>
-              <a class="btn ghost" href="https://wa.me/971505709598" target="_blank" rel="noopener"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a>
-              <button class="btn ghost" type="button" id="btnExportLeads"><i class="fa-solid fa-file-csv"></i> Export Leads CSV</button>
+            <div class="row2">
+              <div class="field"><label>Email</label><input type="email" name="email" placeholder="you@email.com"/></div>
+              <div class="field"><label>Preferred Date/Time *</label><input required name="datetime" placeholder="e.g., Sat 4 PM"/></div>
             </div>
-            <div class="tiny muted" id="bookingMsg"></div>
+            <div class="field"><label>Message</label><textarea name="message" rows="3" placeholder="Your requirements..."></textarea></div>
+            <button class="btn btn-primary btn-block" type="submit">Request Showing</button>
           </form>
         </div>
 
-        <div class="cardbox">
-          <h3>Seller Valuation (High‑Conversion)</h3>
-          <form id="valuationForm" class="form">
-            <div class="f"><label>Property Address *</label><input required name="address" placeholder="Building, area, unit"/></div>
-            <div class="grid2">
-              <div class="f"><label>Name *</label><input required name="name" placeholder="Your name"/></div>
-              <div class="f"><label>Phone *</label><input required name="phone" placeholder="+971..."/></div>
-            </div>
-            <div class="grid2">
-              <div class="f"><label>Property Type</label>
-                <select name="ptype">
-                  <option>Apartment</option><option>Villa</option><option>Townhouse</option><option>Plot</option>
-                </select>
-              </div>
-              <div class="f"><label>Urgency</label>
-                <select name="urgency">
-                  <option>Just checking</option>
-                  <option>Sell in 1–3 months</option>
-                  <option>Sell in 3–6 months</option>
-                  <option>Urgent (ASAP)</option>
-                </select>
-              </div>
-            </div>
-            <button class="btn primary" type="submit"><i class="fa-solid fa-chart-line"></i> Get Free Report</button>
-            <div class="tiny muted" id="valuationMsg"></div>
-          </form>
+        <div class="card">
+          <h3>Free Home Valuation</h3>
+          <p class="muted">Best seller lead magnet. Keep short for high conversion.</p>
 
-          <div class="contactcards">
-            <a class="cc" href="tel:+971505709598"><i class="fa-solid fa-phone"></i><div><b>Call</b><div class="muted">+971 50 570 9598</div></div></a>
-            <a class="cc" href="tel:+919599860311"><i class="fa-solid fa-phone"></i><div><b>India</b><div class="muted">+91 95998 60311</div></div></a>
-            <a class="cc" href="mailto:meggha@realestatewithmeggha.com"><i class="fa-solid fa-envelope"></i><div><b>Email</b><div class="muted">meggha@realestatewithmeggha.com</div></div></a>
-            <div class="cc"><i class="fa-solid fa-location-dot"></i><div><b>Office</b><div class="muted">Dubai, UAE</div></div></div>
+          <form class="form" id="valuationForm">
+            <div class="field"><label>Property Address *</label><input required name="address" placeholder="123 Main St, City"/></div>
+            <div class="row2">
+              <div class="field"><label>Name *</label><input required name="name" placeholder="Your name"/></div>
+              <div class="field"><label>Phone / Email *</label><input required name="contact" placeholder="Phone or email"/></div>
+            </div>
+            <div class="field"><label>Notes</label><textarea name="notes" rows="3" placeholder="Beds/baths, upgrades, timeline..."></textarea></div>
+            <button class="btn btn-outline btn-block" type="submit">Get Valuation</button>
+          </form>
+        </div>
+
+        <div class="card">
+          <h3>Direct Contact</h3>
+          <div class="contact-cards">
+            <a class="contact-pill" data-agent-call-link href="tel:+15551234567">📞 <span data-agent-phone>+1 (555) 123-4567</span></a>
+            <a class="contact-pill" data-agent-wa-link href="https://wa.me/15551234567" target="_blank" rel="noopener">💬 WhatsApp</a>
+            <a class="contact-pill" href="mailto:agent@example.com">✉ agent@example.com</a>
+            <a class="contact-pill" href="#top">📍 Your City</a>
           </div>
+
+          <div class="map-embed">
+            <iframe title="Map" loading="lazy" referrerpolicy="no-referrer-when-downgrade"
+              src="https://www.google.com/maps?q=New%20York&output=embed"></iframe>
+          </div>
+
+          <div class="row" style="margin-top:10px">
+            <button class="btn btn-outline" id="btnExportLeads">⬇ Export Leads</button>
+            <button class="btn btn-ghost" id="btnViewOfflineQueue">📦 Offline Queue</button>
+          </div>
+
+          <p class="fine">TODO: Connect forms to CRM (HubSpot/Zoho) using webhook.</p>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Footer -->
-  <footer class="foot">
-    <div class="container footrow">
+  <footer class="footer">
+    <div class="container foot-grid">
       <div>
-        <div class="brand-title">Meggha Bhatia</div>
-        <div class="muted">Dubai Real Estate Specialist • Luxury Off‑Plan</div>
-        <div class="muted tiny">© <span id="year"></span> All rights reserved.</div>
+        <div class="foot-brand">
+          <span class="brand-mark">🏡</span>
+          <div>
+            <div class="brand-title">Agent Name</div>
+            <div class="brand-sub muted">Real Estate Specialist</div>
+          </div>
+        </div>
+        <p class="muted">Premium real estate site with listings + map + offline lead capture.</p>
       </div>
-      <div class="footlinks">
+
+      <div>
+        <h4>Quick Links</h4>
         <a href="#listings">Listings</a>
+        <a href="#mapSection">Map</a>
         <a href="#services">Services</a>
-        <a href="#tools">Tools</a>
         <a href="#contact">Contact</a>
       </div>
-      <div class="footcta">
-        <a class="btn primary" href="https://wa.me/971505709598" target="_blank" rel="noopener"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a>
+
+      <div>
+        <h4>Contact</h4>
+        <a data-agent-call-link href="tel:+15551234567">📞 <span data-agent-phone>+1 (555) 123-4567</span></a>
+        <a data-agent-wa-link href="https://wa.me/15551234567" target="_blank" rel="noopener">💬 WhatsApp</a>
+        <a href="mailto:agent@example.com">✉ agent@example.com</a>
       </div>
+
+      <div>
+        <h4>Legal</h4>
+        <a href="#">Privacy</a>
+        <a href="#">Terms</a>
+      </div>
+    </div>
+
+    <div class="container foot-bottom">
+      <span class="muted">© <span id="year"></span> Agent Name. All rights reserved.</span>
+      <a class="backtop" href="#top">↑ Back to top</a>
     </div>
   </footer>
 
-  <!-- Modals -->
-  <div class="modal" id="modal">
-    <div class="modal-backdrop" id="modalClose"></div>
-    <div class="modal-card" role="dialog" aria-modal="true" aria-label="Property details">
+  <!-- Sticky CTA (mobile) -->
+  <div class="sticky-bar">
+    <button class="sb" data-cta="call">📞 Call</button>
+    <button class="sb" data-cta="whatsapp">💬 WhatsApp</button>
+    <button class="sb primary" data-cta="consult">📅 Consult</button>
+    <button class="sb" data-cta="valuation">🏷️ Valuation</button>
+  </div>
+
+  <!-- Property Modal -->
+  <div class="modal" id="propertyModal" aria-hidden="true">
+    <div class="modal-card">
       <div class="modal-head">
-        <div class="modal-title" id="mTitle">Property</div>
-        <button class="x" id="modalX" aria-label="Close">✕</button>
+        <div class="modal-title">Property Details</div>
+        <button class="btn btn-ghost" id="modalClose">✕</button>
       </div>
-      <div class="modal-body" id="mBody"></div>
+      <div class="modal-body" id="propertyModalContent"></div>
+    </div>
+  </div>
+
+  <!-- Import Modal -->
+  <div class="modal" id="importModal">
+    <div class="modal-card">
+      <div class="modal-head">
+        <div class="modal-title">Import Listings (CSV/JSON)</div>
+        <button class="btn btn-ghost" id="importClose">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="card" style="box-shadow:none">
+          <h3 style="margin:0 0 8px">Upload CSV or JSON</h3>
+          <p class="muted" style="margin:0 0 12px">
+            CSV headers supported: id,title,type,status,price,beds,baths,sqft,year,address,area,city,zip,lat,lng,heroImage,images,tags,virtualTourUrl,brochureUrl,description
+          </p>
+          <input type="file" id="importFile" accept=".csv,application/json,text/csv"/>
+          <div class="row" style="margin-top:12px">
+            <button class="btn btn-outline" id="btnDownloadCsvTemplate">⬇ Download CSV template</button>
+            <button class="btn btn-primary" id="btnImportNow">Import Now</button>
+          </div>
+          <div class="hint muted" id="importStatus" style="margin-top:10px"></div>
+        </div>
+      </div>
     </div>
   </div>
 
   <!-- Toast -->
   <div class="toast" id="toast">
-    <div class="tic">✅</div>
+    <div class="toast-ic"></div>
     <div>
-      <div class="t1" id="toastT">Saved</div>
-      <div class="t2" id="toastM">Done</div>
+      <div class="toast-t" id="toastTitle">Saved</div>
+      <div class="toast-m" id="toastMsg">Done.</div>
     </div>
   </div>
 
-  <!-- Floating WhatsApp -->
-  <a class="wa" href="https://wa.me/971505709598" target="_blank" rel="noopener" aria-label="WhatsApp">
-    <i class="fa-brands fa-whatsapp"></i>
-  </a>
+  <!-- Scripts -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="app.js"></script>
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
 
-  <script src="app.js" defer></script>
+    // register SW
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+    }
+
+    // mobile nav
+    const burger = document.getElementById('navBurger');
+    const drawer = document.getElementById('drawer');
+    burger?.addEventListener('click', () => drawer.classList.toggle('open'));
+    drawer?.addEventListener('click', (e) => {
+      if (e.target.classList.contains('drawer-link')) drawer.classList.remove('open');
+    });
+
+    // progress
+    const sp = document.getElementById('scrollProgress');
+    window.addEventListener('scroll', () => {
+      const h = document.documentElement;
+      const p = (h.scrollTop / (h.scrollHeight - h.clientHeight)) * 100;
+      sp.style.width = `${p}%`;
+    });
+  </script>
 </body>
 </html>
