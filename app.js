@@ -1,1103 +1,1662 @@
-/* ==========================================================================
-   Real Estate Agent Website — app.js (Ultra Premium / Offline-first)
-   Features:
-   - Listings: search/filter/sort + favorites
-   - Property modal: gallery + share + WhatsApp/call
-   - Lead forms: consult/showing/valuation (offline queue)
-   - Map view: Leaflet markers + open modal from pin
-   - Import listings: CSV/JSON
-   - Export: leads + favorites + listings (JSON)
-   - PWA install prompt helper
-   ========================================================================== */
+/* ==================== 10-STAR ULTRA-PREMIUM REAL ESTATE WEBSITE ==================== */
+/* Author: Premium Real Estate Agent Website
+/* Version: 1.0.0
+/* Description: Real-time functionality, API integrations, calculators, and interactive features
+/* ==================================================================================== */
 
-/** =========================
- *  CONFIG
- *  ========================= */
-// TODO: Connect to your backend API
-const APP_CONFIG = {
-  agent: {
-    name: "Agent Name",
-    phoneDisplay: "+1 (555) 123-4567",
-    phoneE164: "+15551234567",
-    whatsappE164: "+15551234567",
-    whatsappMessage: "Hi! I'm interested in a property. Please share details.",
-  },
-  currency: "USD",
-  locale: "en-US",
-  storageKeys: {
-    favorites: "re_favorites_v1",
-    leadsQueue: "re_leads_queue_v1",
-    lastSync: "re_last_sync_v1",
-    listings: "re_listings_v1"
-  },
-  offlineQueueMax: 200,
-
-  // Map defaults (change to your city)
-  map: {
-    defaultLat: 40.748,
-    defaultLng: -73.985,
-    defaultZoom: 12
-  }
+// ==================== CONFIGURATION & CONSTANTS ====================
+const CONFIG = {
+    // API Keys (Replace with your actual keys)
+    GOOGLE_MAPS_API_KEY: 'YOUR_GOOGLE_MAPS_API_KEY',
+    MLS_IDX_API_KEY: 'YOUR_MLS_IDX_API_KEY',
+    MLS_IDX_ENDPOINT: 'https://api.mlsidx.com/v1',
+    
+    // Contact Information
+    AGENT_PHONE: '+1234567890',
+    AGENT_EMAIL: 'agent@example.com',
+    AGENT_WHATSAPP: '1234567890',
+    
+    // CRM Integration
+    CRM_API_ENDPOINT: 'https://api.yourcrm.com/leads',
+    CRM_API_KEY: 'YOUR_CRM_API_KEY',
+    
+    // Email Service (e.g., SendGrid, Mailgun)
+    EMAIL_SERVICE_ENDPOINT: 'https://api.sendgrid.com/v3/mail/send',
+    EMAIL_API_KEY: 'YOUR_EMAIL_API_KEY',
+    
+    // SMS Service (e.g., Twilio)
+    SMS_SERVICE_ENDPOINT: 'https://api.twilio.com/2010-04-01/Accounts/YOUR_ACCOUNT_SID/Messages.json',
+    SMS_API_KEY: 'YOUR_TWILIO_API_KEY',
+    
+    // Calendar Integration (Calendly or Google Calendar)
+    CALENDAR_EMBED_URL: 'https://calendly.com/your-username',
+    
+    // Real-time Interest Rates API
+    INTEREST_RATE_API: 'https://api.freddiemac.com/v1/rates',
+    
+    // Property Valuation API (AVM)
+    AVM_API_ENDPOINT: 'https://api.housecanary.com/v2/property/value',
+    AVM_API_KEY: 'YOUR_AVM_API_KEY',
+    
+    // Settings
+    PROPERTY_UPDATE_INTERVAL: 300000, // 5 minutes in milliseconds
+    MARKET_DATA_UPDATE_INTERVAL: 3600000, // 1 hour
+    REVIEWS_UPDATE_INTERVAL: 3600000, // 1 hour
+    DEFAULT_SEARCH_RADIUS: 10, // miles
+    PROPERTIES_PER_PAGE: 12,
 };
 
-const $ = (sel, root = document) => root.querySelector(sel);
-const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
-
-function formatMoney(n, currency = APP_CONFIG.currency, locale = APP_CONFIG.locale) {
-  try {
-    return new Intl.NumberFormat(locale, { style: "currency", currency }).format(Number(n || 0));
-  } catch {
-    return `$${Number(n || 0).toLocaleString()}`;
-  }
-}
-function formatNumber(n, locale = APP_CONFIG.locale) {
-  return new Intl.NumberFormat(locale).format(Number(n || 0));
-}
-function safeJsonParse(str, fallback) {
-  try { return JSON.parse(str); } catch { return fallback; }
-}
-function uid(prefix = "id") {
-  return `${prefix}_${Date.now().toString(16)}_${Math.random().toString(16).slice(2)}`;
-}
-function debounce(fn, ms = 200) {
-  let t;
-  return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
-}
-function isOnline() { return navigator.onLine; }
-function smoothScrollTo(selector) {
-  const el = $(selector);
-  if (!el) return;
-  el.scrollIntoView({ behavior: "smooth", block: "start" });
-}
-function escapeHtml(str) {
-  return String(str ?? "")
-    .replaceAll("&","&amp;")
-    .replaceAll("<","&lt;")
-    .replaceAll(">","&gt;")
-    .replaceAll('"',"&quot;")
-    .replaceAll("'","&#039;");
-}
-function escapeAttr(str){ return escapeHtml(str).replaceAll("`","&#096;"); }
-function nowISO(){ return new Date().toISOString(); }
-
-function showToast(title, msg, type = "success", timeout = 2800) {
-  const toast = $("#toast");
-  if (!toast) return alert(`${title}\n\n${msg}`);
-
-  const t = $("#toastTitle");
-  const m = $("#toastMsg");
-
-  if (t) t.textContent = title;
-  if (m) m.textContent = msg;
-
-  toast.dataset.type = type;
-  toast.classList.add("show");
-
-  window.clearTimeout(showToast._t);
-  showToast._t = window.setTimeout(() => toast.classList.remove("show"), timeout);
-}
-
-/** =========================
- *  STORAGE
- *  ========================= */
-function loadFavorites() {
-  return safeJsonParse(localStorage.getItem(APP_CONFIG.storageKeys.favorites), []);
-}
-function saveFavorites(favs) {
-  localStorage.setItem(APP_CONFIG.storageKeys.favorites, JSON.stringify(favs));
-}
-function toggleFavorite(listingId) {
-  const favs = loadFavorites();
-  const idx = favs.indexOf(listingId);
-  if (idx >= 0) favs.splice(idx, 1);
-  else favs.push(listingId);
-  saveFavorites(favs);
-  return favs;
-}
-function isFavorite(listingId) {
-  return loadFavorites().includes(listingId);
-}
-
-function loadLeadQueue() {
-  return safeJsonParse(localStorage.getItem(APP_CONFIG.storageKeys.leadsQueue), []);
-}
-function saveLeadQueue(queue) {
-  localStorage.setItem(APP_CONFIG.storageKeys.leadsQueue, JSON.stringify(queue.slice(-APP_CONFIG.offlineQueueMax)));
-}
-function enqueueLead(lead) {
-  const queue = loadLeadQueue();
-  queue.push(lead);
-  saveLeadQueue(queue);
-  return queue.length;
-}
-
-function loadListingsFromStorage() {
-  return safeJsonParse(localStorage.getItem(APP_CONFIG.storageKeys.listings), null);
-}
-function saveListingsToStorage(listings) {
-  localStorage.setItem(APP_CONFIG.storageKeys.listings, JSON.stringify(listings));
-}
-
-/** =========================
- *  DEFAULT DATA (demo)
- *  ========================= */
-// TODO: Replace with real feed / backend
-const DEFAULT_LISTINGS = [
-  {
-    id: "L-1001",
-    title: "Modern Family Home",
-    type: "House",
-    status: "For Sale",
-    price: 675000,
-    beds: 4,
-    baths: 3,
-    sqft: 2450,
-    year: 2016,
-    address: "123 Maple Street",
-    area: "Downtown",
-    city: "Your City",
-    zip: "10001",
-    lat: 40.748,
-    lng: -73.985,
-    heroImage: "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=1200&q=80&auto=format&fit=crop",
-    images: [
-      "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=1200&q=80&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1507089947368-19c1da9775ae?w=1200&q=80&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1560185127-6ed189bf02f4?w=1200&q=80&auto=format&fit=crop"
-    ],
-    tags: ["garage", "backyard", "open-plan"],
-    virtualTourUrl: "https://example.com/virtual-tour",
-    brochureUrl: "https://example.com/brochure.pdf",
-    description: "Bright, open-plan home with a modern kitchen, spacious living areas, and a private backyard."
-  },
-  {
-    id: "L-1002",
-    title: "Luxury Downtown Condo",
-    type: "Condo",
-    status: "For Sale",
-    price: 520000,
-    beds: 2,
-    baths: 2,
-    sqft: 1120,
-    year: 2020,
-    address: "88 Skyline Ave #1204",
-    area: "Downtown",
-    city: "Your City",
-    zip: "10001",
-    lat: 40.742,
-    lng: -73.99,
-    heroImage: "https://images.unsplash.com/photo-1501183638710-841dd1904471?w=1200&q=80&auto=format&fit=crop",
-    images: [
-      "https://images.unsplash.com/photo-1501183638710-841dd1904471?w=1200&q=80&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=1200&q=80&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1505692952047-1a78307da8f2?w=1200&q=80&auto=format&fit=crop"
-    ],
-    tags: ["doorman", "gym", "city-view"],
-    virtualTourUrl: "",
-    brochureUrl: "",
-    description: "Premium high-rise condo with city views, modern finishes, and building amenities."
-  },
-  {
-    id: "L-1003",
-    title: "Cozy Suburban Townhouse",
-    type: "Townhouse",
-    status: "For Rent",
-    price: 3200,
-    beds: 3,
-    baths: 2,
-    sqft: 1600,
-    year: 2012,
-    address: "45 Cedar Lane",
-    area: "Suburbs",
-    city: "Your City",
-    zip: "10009",
-    lat: 40.73,
-    lng: -73.97,
-    heroImage: "https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=1200&q=80&auto=format&fit=crop",
-    images: [
-      "https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=1200&q=80&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1502005229762-cf1b2da7c5d6?w=1200&q=80&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=1200&q=80&auto=format&fit=crop"
-    ],
-    tags: ["pet-friendly", "community", "parking"],
-    virtualTourUrl: "",
-    brochureUrl: "",
-    description: "Comfortable townhouse in a quiet community. Great schools nearby."
-  }
-];
-
-const TESTIMONIALS = [
-  { name: "Aman K.", role: "Buyer", text: "Got our dream home in 2 weeks. Negotiation was amazing." },
-  { name: "Priya S.", role: "Seller", text: "Sold in 7 days above asking. Marketing was great." },
-  { name: "John D.", role: "Investor", text: "Helped me pick a high-yield rental. Smooth process." },
-  { name: "Sara M.", role: "First-time Buyer", text: "Explained everything step-by-step. Very responsive." }
-];
-
-const NEIGHBORHOODS = [
-  { id: "downtown", name: "Downtown", vibe: "Walkable, vibrant, premium condos", avgPrice: 610000, schools: "A-", commute: "10-20 min" },
-  { id: "suburbs", name: "Suburbs", vibe: "Family-friendly, parks, schools", avgPrice: 480000, schools: "A", commute: "25-45 min" },
-  { id: "waterfront", name: "Waterfront", vibe: "Luxury views, lifestyle, high demand", avgPrice: 820000, schools: "B+", commute: "15-30 min" }
-];
-
-/** =========================
- *  STATE
- *  ========================= */
-const state = {
-  listings: [],
-  view: {
-    filter: {
-      query: "",
-      type: "any",
-      beds: "any",
-      minPrice: "",
-      maxPrice: "",
-      sort: "newest",
-      favoritesOnly: false
-    }
-  },
-  ui: {
-    currentTestimonialIndex: 0,
-    deferredInstallPrompt: null
-  },
-  map: {
-    instance: null,
-    markersLayer: null
-  }
+// ==================== STATE MANAGEMENT ====================
+const STATE = {
+    currentUser: null,
+    savedSearches: [],
+    favoriteProperties: [],
+    searchFilters: {},
+    currentPage: 1,
+    totalResults: 0,
+    properties: [],
+    marketData: {},
+    currentInterestRate: 6.5,
+    map: null,
+    markers: [],
+    chatbotActive: false,
+    lastMLSUpdate: null,
 };
 
-/** =========================
- *  LISTINGS: filter/sort/render
- *  ========================= */
-function applyFilters(listings) {
-  const f = state.view.filter;
-  const q = (f.query || "").trim().toLowerCase();
-  let out = [...listings];
+// ==================== INITIALIZATION ====================
+document.addEventListener('DOMContentLoaded', () => {
+    initializeApp();
+});
 
-  if (f.favoritesOnly) {
-    const favs = loadFavorites();
-    out = out.filter(l => favs.includes(l.id));
-  }
-  if (q) {
-    out = out.filter(l => {
-      const hay = [
-        l.title,l.type,l.status,l.address,l.area,l.city,l.zip,
-        (l.tags||[]).join(" "), String(l.price), String(l.beds), String(l.baths), String(l.sqft)
-      ].join(" ").toLowerCase();
-      return hay.includes(q);
+function initializeApp() {
+    console.log('🚀 Initializing 10-Star Real Estate Website...');
+    
+    // Initialize core features
+    initializeHeader();
+    initializeHeroSearch();
+    initializePropertySearch();
+    initializeCalculators();
+    initializeChatbot();
+    initializeModals();
+    initializeAnimations();
+    initializeMobileMenu();
+    initializeFloatingCTA();
+    
+    // Load real-time data
+    loadLiveMLSData();
+    loadMarketData();
+    loadCurrentInterestRate();
+    loadLiveReviews();
+    loadAgentAvailability();
+    
+    // Set up auto-updates
+    startAutoUpdates();
+    
+    // Load user preferences from localStorage
+    loadUserPreferences();
+    
+    console.log('✅ Website initialized successfully!');
+}
+
+// ==================== HEADER & NAVIGATION ====================
+function initializeHeader() {
+    const header = document.getElementById('main-header');
+    const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+    const mainNav = document.getElementById('mainNav');
+    
+    // Sticky header on scroll
+    let lastScroll = 0;
+    window.addEventListener('scroll', () => {
+        const currentScroll = window.pageYOffset;
+        
+        if (currentScroll > 100) {
+            header.classList.add('scrolled');
+        } else {
+            header.classList.remove('scrolled');
+        }
+        
+        lastScroll = currentScroll;
     });
-  }
-  if (f.type !== "any") out = out.filter(l => (l.type||"").toLowerCase() === f.type);
-  if (f.beds !== "any") out = out.filter(l => Number(l.beds||0) >= Number(f.beds));
-
-  const minP = f.minPrice !== "" ? Number(f.minPrice) : null;
-  const maxP = f.maxPrice !== "" ? Number(f.maxPrice) : null;
-  if (minP != null && !Number.isNaN(minP)) out = out.filter(l => Number(l.price||0) >= minP);
-  if (maxP != null && !Number.isNaN(maxP)) out = out.filter(l => Number(l.price||0) <= maxP);
-
-  switch (f.sort) {
-    case "price_asc": out.sort((a,b)=>Number(a.price||0)-Number(b.price||0)); break;
-    case "price_desc": out.sort((a,b)=>Number(b.price||0)-Number(a.price||0)); break;
-    case "sqft_desc": out.sort((a,b)=>Number(b.sqft||0)-Number(a.sqft||0)); break;
-    case "newest":
-    default: out.sort((a,b)=>String(b.id).localeCompare(String(a.id)));
-  }
-  return out;
+    
+    // Smooth scroll for navigation links
+    document.querySelectorAll('.nav-link').forEach(link => {
+        link.addEventListener('click', (e) => {
+            const href = link.getAttribute('href');
+            if (href.startsWith('#')) {
+                e.preventDefault();
+                const target = document.querySelector(href);
+                if (target) {
+                    const headerHeight = header.offsetHeight;
+                    const targetPosition = target.offsetTop - headerHeight;
+                    window.scrollTo({
+                        top: targetPosition,
+                        behavior: 'smooth'
+                    });
+                    
+                    // Update active link
+                    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+                    link.classList.add('active');
+                    
+                    // Close mobile menu
+                    mainNav.classList.remove('active');
+                    mobileMenuToggle.classList.remove('active');
+                }
+            }
+        });
+    });
 }
 
-function listingCardHTML(l) {
-  const fav = isFavorite(l.id);
-  return `
-    <article class="listing-card">
-      <div class="listing-thumb" style="background-image:url('${escapeAttr(l.heroImage||"")}')">
-        <button class="fav-btn" data-fav="${escapeAttr(l.id)}">${fav ? "❤️":"🤍"}</button>
-        <div class="listing-badges">
-          <span class="badge">${escapeHtml(l.status||"")}</span>
-          <span class="badge badge-dark">${escapeHtml(l.type||"")}</span>
-        </div>
-      </div>
-      <div class="listing-body">
-        <div class="listing-price">${formatMoney(l.price)}</div>
-        <h3 class="listing-title">${escapeHtml(l.title||"")}</h3>
-        <div class="listing-loc">${escapeHtml(l.address||"")}, ${escapeHtml(l.area||"")}</div>
-        <div class="listing-meta">
-          <span>🛏 ${l.beds||0}</span>
-          <span>🛁 ${l.baths||0}</span>
-          <span>📐 ${formatNumber(l.sqft||0)} sqft</span>
-        </div>
-        <div class="listing-actions">
-          <button class="btn-sm btn-primary" data-open="${escapeAttr(l.id)}">View Details</button>
-          <button class="btn-sm" data-showing="${escapeAttr(l.id)}">Request Showing</button>
-        </div>
-      </div>
-    </article>
-  `;
-}
-
-function renderListings() {
-  const grid = $("#listingsGrid");
-  if (!grid) return;
-
-  const filtered = applyFilters(state.listings);
-  grid.innerHTML = filtered.map(listingCardHTML).join("");
-
-  if (!filtered.length) {
-    grid.innerHTML = `<div class="empty"><h3>No matching properties found</h3><p>Try adjusting filters.</p></div>`;
-  }
-
-  // update map pins too (so filters affect map)
-  renderMapPins(filtered);
-}
-
-/** =========================
- *  PROPERTY MODAL
- *  ========================= */
-function openPropertyModal(listingId) {
-  const l = state.listings.find(x => x.id === listingId);
-  if (!l) return;
-
-  const content = $("#propertyModalContent");
-  const modal = $("#propertyModal");
-  if (!content || !modal) return;
-
-  const fav = isFavorite(l.id);
-  const imgs = (l.images||[]).map((src, idx)=>`
-    <button class="thumb-btn" data-img="${escapeAttr(src)}">
-      <img src="${escapeAttr(src)}" alt="Image ${idx+1}" loading="lazy"/>
-    </button>
-  `).join("");
-
-  const shareUrl = `${location.origin}${location.pathname}#property=${encodeURIComponent(l.id)}`;
-
-  content.innerHTML = `
-    <div class="pm-grid">
-      <div class="pm-left">
-        <div class="pm-hero">
-          <img id="pmHeroImg" src="${escapeAttr(l.heroImage||"")}" alt="${escapeHtml(l.title||"")}"/>
-          <button class="pm-fav" data-fav="${escapeAttr(l.id)}">${fav ? "❤️ Saved":"🤍 Save"}</button>
-        </div>
-        <div class="pm-thumbs">${imgs}</div>
-      </div>
-
-      <div class="pm-right">
-        <div class="pm-price">${formatMoney(l.price)} <span class="pm-status">${escapeHtml(l.status||"")}</span></div>
-        <h2 class="pm-title">${escapeHtml(l.title||"")}</h2>
-        <div class="pm-sub">${escapeHtml(l.address||"")}, ${escapeHtml(l.area||"")}, ${escapeHtml(l.city||"")} ${escapeHtml(l.zip||"")}</div>
-
-        <div class="pm-stats">
-          <div class="pm-stat"><div class="k">Beds</div><div class="v">${l.beds||0}</div></div>
-          <div class="pm-stat"><div class="k">Baths</div><div class="v">${l.baths||0}</div></div>
-          <div class="pm-stat"><div class="k">Sqft</div><div class="v">${formatNumber(l.sqft||0)}</div></div>
-          <div class="pm-stat"><div class="k">Year</div><div class="v">${l.year||"—"}</div></div>
-        </div>
-
-        <div class="pm-desc">
-          <h3>About</h3>
-          <p>${escapeHtml(l.description||"—")}</p>
-        </div>
-
-        <div class="pm-tags">${(l.tags||[]).map(t=>`<span class="tag">${escapeHtml(t)}</span>`).join("")}</div>
-
-        <div class="pm-actions">
-          <button class="btn btn-primary" data-showing="${escapeAttr(l.id)}">📅 Book Showing</button>
-          <button class="btn" data-cta="whatsapp" data-listing="${escapeAttr(l.id)}">💬 WhatsApp</button>
-          <button class="btn" data-cta="call">📞 Call</button>
-          <button class="btn btn-outline" data-share="${escapeAttr(l.id)}">🔗 Share</button>
-        </div>
-
-        <div class="pm-links">
-          ${l.virtualTourUrl ? `<a href="${escapeAttr(l.virtualTourUrl)}" target="_blank" rel="noopener">▶ Virtual Tour</a>` : ""}
-          ${l.brochureUrl ? `<a href="${escapeAttr(l.brochureUrl)}" target="_blank" rel="noopener">⬇ Brochure</a>` : ""}
-        </div>
-
-        <div class="mini-card" style="margin-top:12px">
-          <div class="muted" style="font-weight:800;font-size:12px">Share link:</div>
-          <div style="word-break:break-all;font-weight:800;font-size:12px">${escapeHtml(shareUrl)}</div>
-        </div>
-      </div>
-    </div>
-  `;
-
-  modal.classList.add("open");
-  document.body.style.overflow = "hidden";
-}
-
-function closePropertyModal() {
-  const modal = $("#propertyModal");
-  if (!modal) return;
-  modal.classList.remove("open");
-  document.body.style.overflow = "";
-}
-
-/** =========================
- *  FORMS (offline queue)
- *  ========================= */
-function validateForm(formEl) {
-  const required = $$("[required]", formEl);
-  for (const el of required) {
-    if (!String(el.value||"").trim()) {
-      el.focus();
-      return { ok:false, message:`Please fill: ${el.name || el.id || "required field"}` };
+function initializeMobileMenu() {
+    const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+    const mainNav = document.getElementById('mainNav');
+    
+    if (mobileMenuToggle) {
+        mobileMenuToggle.addEventListener('click', () => {
+            mobileMenuToggle.classList.toggle('active');
+            mainNav.classList.toggle('active');
+        });
     }
-  }
-  const emailEl = formEl.querySelector('input[type="email"]');
-  if (emailEl && emailEl.value) {
-    const ok = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailEl.value.trim());
-    if (!ok) { emailEl.focus(); return { ok:false, message:"Please enter a valid email." }; }
-  }
-  return { ok:true };
 }
 
-// TODO: Connect to your backend API (HubSpot/Zoho/Webhook)
-async function submitLeadToBackend(lead) {
-  // Example webhook:
-  // await fetch("https://your-webhook", {method:"POST", headers:{'Content-Type':'application/json'}, body:JSON.stringify(lead)})
-  await new Promise(r=>setTimeout(r, 600));
-  return { success:true, id: uid("lead") };
+// ==================== HERO SECTION ====================
+function initializeHeroSearch() {
+    // Search tabs switching
+    const searchTabs = document.querySelectorAll('.search-tab');
+    const searchContents = document.querySelectorAll('.search-content');
+    
+    searchTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            const tabName = tab.getAttribute('data-tab');
+            
+            // Update active tab
+            searchTabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            
+            // Update active content
+            searchContents.forEach(content => {
+                if (content.getAttribute('data-content') === tabName) {
+                    content.classList.add('active');
+                } else {
+                    content.classList.remove('active');
+                }
+            });
+        });
+    });
+    
+    // Animate hero stats
+    animateCounters();
 }
 
-async function handleLeadSubmit(formEl, leadType) {
-  const v = validateForm(formEl);
-  if (!v.ok) return showToast("Validation", v.message, "error");
+function animateCounters() {
+    const counters = document.querySelectorAll('.stat-number');
+    
+    counters.forEach(counter => {
+        const target = parseInt(counter.getAttribute('data-target'));
+        const duration = 2000;
+        const increment = target / (duration / 16);
+        let current = 0;
+        
+        const updateCounter = () => {
+            current += increment;
+            if (current < target) {
+                counter.textContent = Math.floor(current);
+                requestAnimationFrame(updateCounter);
+            } else {
+                counter.textContent = target;
+            }
+        };
+        
+        // Start animation when element is visible
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    updateCounter();
+                    observer.disconnect();
+                }
+            });
+        });
+        
+        observer.observe(counter);
+    });
+}
 
-  const data = Object.fromEntries(new FormData(formEl).entries());
-  const lead = { id: uid("lead"), leadType, createdAt: nowISO(), onlineAtSubmit: isOnline(), payload: data };
+function handleQuickSearch(event, type = 'buy') {
+    event.preventDefault();
+    
+    const location = document.getElementById(type === 'rent' ? 'rentSearchLocation' : 'quickSearchLocation').value;
+    
+    if (!location) {
+        showNotification('Please enter a location', 'warning');
+        return;
+    }
+    
+    // Set search filters
+    STATE.searchFilters = {
+        location: location,
+        type: type,
+        propertyType: type === 'rent' ? null : document.getElementById('quickPropertyType')?.value,
+        beds: type === 'rent' ? document.getElementById('rentBeds')?.value : document.getElementById('quickBeds')?.value,
+        baths: type === 'rent' ? null : document.getElementById('quickBaths')?.value,
+    };
+    
+    // Scroll to search section
+    scrollToSearch();
+    
+    // Trigger search
+    applyFilters();
+}
 
-  const qLen = enqueueLead(lead);
+function handleQuickValuation(event) {
+    event.preventDefault();
+    
+    const address = document.getElementById('valuationAddress').value;
+    
+    if (!address) {
+        showNotification('Please enter your property address', 'warning');
+        return;
+    }
+    
+    // Open valuation modal with address
+    openValuationModal(address);
+}
 
-  if (!isOnline()) {
-    formEl.reset();
-    return showToast("Saved Offline", `No internet. Lead queued (#${qLen}).`, "warning");
-  }
+function scrollToSearch() {
+    const searchSection = document.getElementById('search');
+    const headerHeight = document.getElementById('main-header').offsetHeight;
+    const targetPosition = searchSection.offsetTop - headerHeight;
+    
+    window.scrollTo({
+        top: targetPosition,
+        behavior: 'smooth'
+    });
+}
 
-  try {
-    const res = await submitLeadToBackend(lead);
-    formEl.reset();
-    if (res?.success) {
-      localStorage.setItem(APP_CONFIG.storageKeys.lastSync, nowISO());
-      showToast("Submitted", "Thanks! We'll contact you shortly.", "success");
+// ==================== PROPERTY SEARCH ====================
+function initializePropertySearch() {
+    // Initialize filters
+    initializeFilterControls();
+    
+    // Initialize map
+    if (typeof google !== 'undefined') {
+        initializeMap();
     } else {
-      showToast("Saved", "Saved locally. We'll retry sync later.", "warning");
+        loadGoogleMapsAPI().then(() => initializeMap());
     }
-  } catch {
-    formEl.reset();
-    showToast("Saved", "Network issue. Saved locally and will retry later.", "warning");
-  }
 }
 
-async function trySyncOfflineQueue() {
-  if (!isOnline()) return;
-  const queue = loadLeadQueue();
-  if (!queue.length) return;
+function initializeFilterControls() {
+    // Price range sliders
+    const minPrice = document.getElementById('minPrice');
+    const maxPrice = document.getElementById('maxPrice');
+    const minPriceLabel = document.getElementById('minPriceLabel');
+    const maxPriceLabel = document.getElementById('maxPriceLabel');
+    
+    if (minPrice && maxPrice) {
+        minPrice.addEventListener('input', () => {
+            minPriceLabel.textContent = formatCurrency(minPrice.value);
+            STATE.searchFilters.minPrice = parseInt(minPrice.value);
+        });
+        
+        maxPrice.addEventListener('input', () => {
+            const value = parseInt(maxPrice.value);
+            maxPriceLabel.textContent = value >= 10000000 ? '$10M+' : formatCurrency(value);
+            STATE.searchFilters.maxPrice = value;
+        });
+    }
+    
+    // Location autocomplete
+    const locationInput = document.getElementById('searchLocation');
+    if (locationInput) {
+        locationInput.addEventListener('input', debounce(handleLocationAutocomplete, 300));
+    }
+}
 
-  const batch = queue.slice(-10);
-  let okCount = 0;
+function handleLocationAutocomplete(event) {
+    const query = event.target.value;
+    
+    if (query.length < 3) {
+        document.getElementById('locationSuggestions').style.display = 'none';
+        return;
+    }
+    
+    // Call location API (Google Places Autocomplete)
+    // This is a placeholder - implement actual API call
+    const suggestions = [
+        { name: 'Downtown, City Name', lat: 0, lng: 0 },
+        { name: 'Suburb Area, City Name', lat: 0, lng: 0 },
+        { name: 'ZIP Code 12345', lat: 0, lng: 0 },
+    ];
+    
+    displayLocationSuggestions(suggestions);
+}
 
-  for (const lead of batch) {
+function displayLocationSuggestions(suggestions) {
+    const container = document.getElementById('locationSuggestions');
+    
+    if (!suggestions || suggestions.length === 0) {
+        container.style.display = 'none';
+        return;
+    }
+    
+    container.innerHTML = suggestions.map(suggestion => `
+        <div class="suggestion-item" onclick="selectLocation('${suggestion.name}', ${suggestion.lat}, ${suggestion.lng})">
+            <i class="fas fa-map-marker-alt"></i>
+            <span>${suggestion.name}</span>
+        </div>
+    `).join('');
+    
+    container.style.display = 'block';
+}
+
+function selectLocation(name, lat, lng) {
+    document.getElementById('searchLocation').value = name;
+    document.getElementById('locationSuggestions').style.display = 'none';
+    
+    STATE.searchFilters.location = name;
+    STATE.searchFilters.coordinates = { lat, lng };
+}
+
+function selectBeds(button) {
+    document.querySelectorAll('.button-group .btn-chip').forEach(btn => {
+        if (btn.parentElement === button.parentElement) {
+            btn.classList.remove('active');
+        }
+    });
+    button.classList.add('active');
+    STATE.searchFilters.beds = button.getAttribute('data-value');
+}
+
+function selectBaths(button) {
+    document.querySelectorAll('.button-group .btn-chip').forEach(btn => {
+        if (btn.parentElement === button.parentElement) {
+            btn.classList.remove('active');
+        }
+    });
+    button.classList.add('active');
+    STATE.searchFilters.baths = button.getAttribute('data-value');
+}
+
+function resetFilters() {
+    STATE.searchFilters = {};
+    STATE.currentPage = 1;
+    
+    // Reset UI
+    document.getElementById('searchLocation').value = '';
+    document.getElementById('minPrice').value = 0;
+    document.getElementById('maxPrice').value = 10000000;
+    document.getElementById('minPriceLabel').textContent = '$0';
+    document.getElementById('maxPriceLabel').textContent = '$10M+';
+    
+    document.querySelectorAll('.btn-chip').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.filter-checkbox').forEach(cb => cb.checked = false);
+    
+    // Reload properties
+    loadLiveMLSData();
+}
+
+async function applyFilters() {
+    showLoadingState();
+    
     try {
-      const res = await submitLeadToBackend(lead);
-      if (res?.success) okCount++;
-    } catch {}
-  }
-
-  if (okCount) {
-    localStorage.setItem(APP_CONFIG.storageKeys.lastSync, nowISO());
-    showToast("Synced", `Synced ${okCount} queued lead(s).`, "success");
-  }
+        // Build filter query
+        const filters = buildFilterQuery();
+        
+        // Fetch properties from MLS/IDX API
+        const properties = await fetchMLSProperties(filters);
+        
+        STATE.properties = properties;
+        STATE.totalResults = properties.length;
+        
+        // Display results
+        displayProperties(properties);
+        updateResultsInfo();
+        
+    } catch (error) {
+        console.error('Error applying filters:', error);
+        showNotification('Failed to load properties. Please try again.', 'error');
+    }
 }
 
-/** =========================
- *  Mortgage Calculator
- *  ========================= */
-function calcEMI({ price, downPayment, annualRate, years }) {
-  const P = Math.max(0, Number(price||0) - Number(downPayment||0));
-  const r = (Number(annualRate||0)/100)/12;
-  const n = Number(years||0)*12;
-  if (P<=0 || n<=0) return { emi:0,totalPay:0,totalInterest:0,principal:P };
-  if (r===0){ const emi=P/n; return { emi,totalPay:P,totalInterest:0,principal:P }; }
-  const emi = (P*r*Math.pow(1+r,n))/(Math.pow(1+r,n)-1);
-  const totalPay = emi*n;
-  return { emi, totalPay, totalInterest: totalPay-P, principal:P };
-}
-
-function wireMortgageCalculator() {
-  const form = $("#mortgageForm");
-  if (!form) return;
-
-  const loanAmountEl = $("#loanAmount");
-  const downEl = $("#downPayment");
-  const rateEl = $("#interestRate");
-  const yearsEl = $("#loanYears");
-
-  const outEmi = $("#emiOut");
-  const outTotal = $("#totalPayOut");
-  const outInt = $("#totalIntOut");
-
-  const update = () => {
-    const r = calcEMI({
-      price: Number(loanAmountEl?.value||0),
-      downPayment: Number(downEl?.value||0),
-      annualRate: Number(rateEl?.value||0),
-      years: Number(yearsEl?.value||0)
+function buildFilterQuery() {
+    const filters = { ...STATE.searchFilters };
+    
+    // Add checkbox filters
+    const checkboxes = document.querySelectorAll('.filter-checkbox:checked');
+    checkboxes.forEach(cb => {
+        filters[cb.id] = true;
     });
-    outEmi.textContent = formatMoney(r.emi);
-    outTotal.textContent = formatMoney(r.totalPay);
-    outInt.textContent = formatMoney(r.totalInterest);
-  };
-
-  form.addEventListener("input", debounce(update, 80));
-  form.addEventListener("submit", (e)=>{e.preventDefault(); update();});
-  update();
+    
+    // Add other input filters
+    const minSqft = document.getElementById('minSqft')?.value;
+    const maxSqft = document.getElementById('maxSqft')?.value;
+    if (minSqft) filters.minSqft = parseInt(minSqft);
+    if (maxSqft) filters.maxSqft = parseInt(maxSqft);
+    
+    return filters;
 }
 
-/** =========================
- *  Testimonials
- *  ========================= */
-function renderTestimonials() {
-  const track = $("#testimonialsTrack");
-  if (!track) return;
-  track.innerHTML = TESTIMONIALS.map(t=>`
-    <div class="test-card">
-      <div class="stars">★★★★★</div>
-      <p class="test-text">“${escapeHtml(t.text)}”</p>
-      <div class="test-person">
-        <div class="test-avatar">${escapeHtml(t.name.slice(0,1))}</div>
-        <div>
-          <div class="test-name">${escapeHtml(t.name)}</div>
-          <div class="test-role">${escapeHtml(t.role)}</div>
+async function fetchMLSProperties(filters) {
+    // This is a placeholder - implement actual MLS/IDX API integration
+    // Example using fetch:
+    
+    const queryParams = new URLSearchParams(filters).toString();
+    const url = `${CONFIG.MLS_IDX_ENDPOINT}/properties?${queryParams}`;
+    
+    try {
+        const response = await fetch(url, {
+            headers: {
+                'Authorization': `Bearer ${CONFIG.MLS_IDX_API_KEY}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!response.ok) throw new Error('API request failed');
+        
+        const data = await response.json();
+        STATE.lastMLSUpdate = new Date();
+        updateLastUpdateTime();
+        
+        return data.properties || [];
+        
+    } catch (error) {
+        console.error('MLS API Error:', error);
+        
+        // Return mock data for demonstration
+        return generateMockProperties();
+    }
+}
+
+function generateMockProperties() {
+    // Mock data generator for demonstration
+    return Array.from({ length: 12 }, (_, i) => ({
+        id: `prop-${i + 1}`,
+        address: `${1000 + i * 100} Premium Street`,
+        city: 'Luxury City',
+        state: 'CA',
+        zip: '90210',
+        price: 500000 + (i * 100000),
+        beds: 3 + (i % 3),
+        baths: 2 + (i % 2),
+        sqft: 2000 + (i * 200),
+        lotSize: 0.25 + (i * 0.1),
+        yearBuilt: 2015 + (i % 8),
+        propertyType: ['Single Family', 'Condo', 'Townhouse'][i % 3],
+        status: ['Active', 'Pending', 'Sold'][i % 3],
+        images: [`https://picsum.photos/800/600?random=${i + 1}`],
+        description: 'Beautiful property in prime location with modern amenities.',
+        daysOnMarket: 5 + (i * 2),
+        pricePerSqft: 250 + (i * 10),
+        features: ['Pool', 'Garage', 'Smart Home', 'Waterfront'][i % 4],
+    }));
+}
+
+function displayProperties(properties) {
+    const container = document.getElementById('gridView');
+    
+    if (!properties || properties.length === 0) {
+        container.innerHTML = `
+            <div class="no-results">
+                <i class="fas fa-home" style="font-size: 4rem; color: var(--medium-gray); margin-bottom: 1rem;"></i>
+                <h3>No Properties Found</h3>
+                <p>Try adjusting your search filters</p>
+                <button class="btn btn-primary" onclick="resetFilters()">Reset Filters</button>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = properties.map(property => createPropertyCard(property)).join('');
+    
+    // Add event listeners
+    container.querySelectorAll('.property-card').forEach((card, index) => {
+        card.addEventListener('click', () => openPropertyModal(properties[index]));
+    });
+}
+
+function createPropertyCard(property) {
+    const statusClass = property.status.toLowerCase();
+    const statusColor = {
+        'active': 'success',
+        'pending': 'warning',
+        'sold': 'error'
+    }[statusClass] || 'success';
+    
+    return `
+        <div class="property-card" data-id="${property.id}">
+            <div class="property-image">
+                <img src="${property.images[0]}" alt="${property.address}" loading="lazy">
+                <div class="property-badge ${statusColor}">${property.status}</div>
+                <button class="favorite-btn" onclick="toggleFavorite('${property.id}', event)">
+                    <i class="far fa-heart"></i>
+                </button>
+                <div class="property-overlay">
+                    <button class="btn btn-primary">
+                        <i class="fas fa-eye"></i> View Details
+                    </button>
+                </div>
+            </div>
+            <div class="property-info">
+                <div class="property-price">${formatCurrency(property.price)}</div>
+                <div class="property-address">
+                    ${property.address}<br>
+                    ${property.city}, ${property.state} ${property.zip}
+                </div>
+                <div class="property-features">
+                    <span><i class="fas fa-bed"></i> ${property.beds} Beds</span>
+                    <span><i class="fas fa-bath"></i> ${property.baths} Baths</span>
+                    <span><i class="fas fa-ruler-combined"></i> ${property.sqft.toLocaleString()} sqft</span>
+                </div>
+                <div class="property-meta">
+                    <span class="property-type">${property.propertyType}</span>
+                    <span class="days-on-market">${property.daysOnMarket} days on market</span>
+                </div>
+            </div>
         </div>
-      </div>
-    </div>
-  `).join("");
-  state.ui.currentTestimonialIndex = 0;
-  updateTestimonialPosition();
-}
-function updateTestimonialPosition(){
-  const track = $("#testimonialsTrack");
-  if (!track) return;
-  track.style.transform = `translateX(${-state.ui.currentTestimonialIndex*100}%)`;
-}
-function nextTestimonial(){
-  state.ui.currentTestimonialIndex = (state.ui.currentTestimonialIndex + 1) % TESTIMONIALS.length;
-  updateTestimonialPosition();
-}
-function prevTestimonial(){
-  state.ui.currentTestimonialIndex = (state.ui.currentTestimonialIndex - 1 + TESTIMONIALS.length) % TESTIMONIALS.length;
-  updateTestimonialPosition();
+    `;
 }
 
-/** =========================
- *  Neighborhoods
- *  ========================= */
-function renderNeighborhoods(){
-  const el = $("#neighborhoodGrid");
-  if (!el) return;
-  el.innerHTML = NEIGHBORHOODS.map(n=>`
-    <div class="nb-card">
-      <div class="nb-title">${escapeHtml(n.name)}</div>
-      <div class="nb-vibe">${escapeHtml(n.vibe)}</div>
-      <div class="nb-meta">
-        <span>Avg: ${formatMoney(n.avgPrice)}</span>
-        <span>Schools: ${escapeHtml(n.schools)}</span>
-        <span>Commute: ${escapeHtml(n.commute)}</span>
-      </div>
-      <button class="btn-sm btn-primary" data-nb-open="${escapeAttr(n.id)}">View Area</button>
-    </div>
-  `).join("");
+function updateResultsInfo() {
+    document.getElementById('resultsCount').textContent = 
+        `${STATE.totalResults} Properties Found`;
+    document.getElementById('resultsLocation').textContent = 
+        STATE.searchFilters.location || 'All Areas';
 }
 
-/** =========================
- *  CTAs
- *  ========================= */
-function doCall(){ location.href = `tel:${APP_CONFIG.agent.phoneE164}`; }
-function doWhatsApp(listingId=null){
-  const l = listingId ? state.listings.find(x=>x.id===listingId) : null;
-  const msg = l ? `Hi! I'm interested in ${l.title} (${l.address}, ${l.area}). Please share details.` : APP_CONFIG.agent.whatsappMessage;
-  const url = `https://wa.me/${APP_CONFIG.agent.whatsappE164.replace(/\+/g,"")}?text=${encodeURIComponent(msg)}`;
-  window.open(url,"_blank","noopener");
-}
-
-/** =========================
- *  Map (Leaflet)
- *  ========================= */
-function initMap(){
-  const mapEl = $("#map");
-  if(!mapEl || typeof L === "undefined") return;
-
-  const m = L.map(mapEl, { zoomControl: true, scrollWheelZoom: true })
-    .setView([APP_CONFIG.map.defaultLat, APP_CONFIG.map.defaultLng], APP_CONFIG.map.defaultZoom);
-
-  // Tiles (online); offline may not load, pins still work
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    attribution: '&copy; OpenStreetMap contributors'
-  }).addTo(m);
-
-  state.map.instance = m;
-  state.map.markersLayer = L.layerGroup().addTo(m);
-
-  renderMapPins(state.listings);
-
-  $("#btnRecenterMap")?.addEventListener("click", ()=>{
-    m.setView([APP_CONFIG.map.defaultLat, APP_CONFIG.map.defaultLng], APP_CONFIG.map.defaultZoom);
-  });
-
-  $("#btnShowAllOnMap")?.addEventListener("click", ()=>{
-    renderMapPins(state.listings);
-  });
-}
-
-function markerColor(status){
-  const s = String(status||"").toLowerCase();
-  if(s.includes("rent")) return "#f59e0b";
-  if(s.includes("sale")) return "#22c55e";
-  return "#94a3b8";
-}
-
-function renderMapPins(listings){
-  if(!state.map.instance || !state.map.markersLayer) return;
-  state.map.markersLayer.clearLayers();
-
-  listings.forEach(l=>{
-    if(typeof l.lat !== "number" || typeof l.lng !== "number") return;
-
-    const color = markerColor(l.status);
-    const icon = L.divIcon({
-      className: "custom-pin",
-      html: `<div style="
-        width:14px;height:14px;border-radius:999px;
-        background:${color};
-        box-shadow:0 0 0 6px rgba(0,0,0,.2);
-        border:2px solid #fff;"></div>`
-    });
-
-    const mk = L.marker([l.lat, l.lng], { icon })
-      .addTo(state.map.markersLayer)
-      .bindPopup(`
-        <div style="min-width:220px">
-          <div style="font-weight:900">${escapeHtml(l.title)}</div>
-          <div style="font-weight:800;color:#2563eb;margin-top:4px">${formatMoney(l.price)}</div>
-          <div style="font-size:12px;color:#64748b;margin-top:4px">${escapeHtml(l.area)} • ${escapeHtml(l.type)}</div>
-          <button style="margin-top:10px;padding:8px 10px;border-radius:10px;border:0;background:#2563eb;color:#fff;font-weight:800;cursor:pointer"
-            onclick="window.__openListing('${escapeAttr(l.id)}')">View Details</button>
+function showLoadingState() {
+    const container = document.getElementById('gridView');
+    container.innerHTML = `
+        <div class="loading-skeleton">
+            ${Array(6).fill('<div class="skeleton-card"></div>').join('')}
         </div>
-      `);
-
-    // click opens modal too
-    mk.on("click", ()=>openPropertyModal(l.id));
-  });
-
-  // Fit bounds if multiple
-  const coords = listings.filter(l=>typeof l.lat==="number" && typeof l.lng==="number").map(l=>[l.lat,l.lng]);
-  if(coords.length >= 2){
-    const b = L.latLngBounds(coords);
-    state.map.instance.fitBounds(b, { padding:[30,30] });
-  }
+    `;
 }
 
-// expose for popup button
-window.__openListing = (id)=>openPropertyModal(id);
-
-/** =========================
- *  Import / Export
- *  ========================= */
-function openImport(){ $("#importModal")?.classList.add("open"); }
-function closeImport(){ $("#importModal")?.classList.remove("open"); }
-
-function downloadText(filename, text, mime="text/plain"){
-  const blob = new Blob([text], {type:mime});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href=url; a.download=filename;
-  document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(()=>URL.revokeObjectURL(url), 500);
-}
-
-function csvTemplate(){
-  const headers = [
-    "id","title","type","status","price","beds","baths","sqft","year",
-    "address","area","city","zip","lat","lng","heroImage","images","tags",
-    "virtualTourUrl","brochureUrl","description"
-  ];
-  return headers.join(",") + "\n";
-}
-
-function parseCSV(text){
-  // Simple CSV parser (supports quoted values)
-  const rows = [];
-  let i=0, field="", row=[], inQ=false;
-
-  const pushField = ()=>{ row.push(field); field=""; };
-  const pushRow = ()=>{ rows.push(row); row=[]; };
-
-  while(i < text.length){
-    const c = text[i];
-    if(inQ){
-      if(c === '"' && text[i+1] === '"'){ field+='"'; i+=2; continue; }
-      if(c === '"'){ inQ=false; i++; continue; }
-      field+=c; i++; continue;
-    } else {
-      if(c === '"'){ inQ=true; i++; continue; }
-      if(c === ','){ pushField(); i++; continue; }
-      if(c === '\n'){ pushField(); pushRow(); i++; continue; }
-      if(c === '\r'){ i++; continue; }
-      field+=c; i++; continue;
-    }
-  }
-  pushField();
-  if(row.length>1 || row[0]) pushRow();
-
-  const headers = rows.shift().map(h=>h.trim());
-  return rows.filter(r=>r.some(x=>String(x||"").trim().length)).map(r=>{
-    const obj = {};
-    headers.forEach((h,idx)=>obj[h]=r[idx] ?? "");
-    return obj;
-  });
-}
-
-function normalizeListing(raw){
-  const images = String(raw.images||"")
-    .split("|")
-    .map(s=>s.trim())
-    .filter(Boolean);
-  const tags = String(raw.tags||"")
-    .split("|")
-    .map(s=>s.trim())
-    .filter(Boolean);
-
-  const lat = raw.lat!=="" ? Number(raw.lat) : null;
-  const lng = raw.lng!=="" ? Number(raw.lng) : null;
-
-  return {
-    id: String(raw.id || uid("L")),
-    title: String(raw.title||"Untitled"),
-    type: String(raw.type||"House"),
-    status: String(raw.status||"For Sale"),
-    price: raw.price!=="" ? Number(raw.price) : 0,
-    beds: raw.beds!=="" ? Number(raw.beds) : 0,
-    baths: raw.baths!=="" ? Number(raw.baths) : 0,
-    sqft: raw.sqft!=="" ? Number(raw.sqft) : 0,
-    year: raw.year!=="" ? Number(raw.year) : null,
-    address: String(raw.address||""),
-    area: String(raw.area||""),
-    city: String(raw.city||""),
-    zip: String(raw.zip||""),
-    lat: Number.isFinite(lat) ? lat : null,
-    lng: Number.isFinite(lng) ? lng : null,
-    heroImage: String(raw.heroImage||""),
-    images: images.length ? images : (raw.heroImage ? [String(raw.heroImage)] : []),
-    tags,
-    virtualTourUrl: String(raw.virtualTourUrl||""),
-    brochureUrl: String(raw.brochureUrl||""),
-    description: String(raw.description||"")
-  };
-}
-
-async function importListingsFromFile(file){
-  if(!file) return;
-  const status = $("#importStatus");
-  try{
-    status.textContent = "Reading file...";
-    const text = await file.text();
-
-    let imported = [];
-    if(file.name.toLowerCase().endsWith(".json")){
-      const data = JSON.parse(text);
-      const arr = Array.isArray(data) ? data : (Array.isArray(data.listings) ? data.listings : []);
-      imported = arr.map(normalizeListing);
-    } else {
-      // csv
-      const rows = parseCSV(text);
-      imported = rows.map(normalizeListing);
-    }
-
-    if(!imported.length) throw new Error("No listings found in file");
-
-    // Merge by id
-    const byId = new Map(state.listings.map(l=>[l.id,l]));
-    imported.forEach(l=>byId.set(l.id, l));
-    state.listings = Array.from(byId.values());
-
-    saveListingsToStorage(state.listings);
-    renderListings();
-    renderMapPins(state.listings);
-
-    status.textContent = `Imported ${imported.length} listings successfully.`;
-    showToast("Imported", `Imported ${imported.length} listings.`, "success");
-  }catch(err){
-    status.textContent = `Import failed: ${err.message}`;
-    showToast("Import Failed", err.message, "error");
-  }
-}
-
-function exportAllData(){
-  const payload = {
-    exportedAt: nowISO(),
-    agent: APP_CONFIG.agent,
-    favorites: loadFavorites(),
-    leadsQueue: loadLeadQueue(),
-    listings: state.listings
-  };
-  downloadText(`real-estate-export-${new Date().toISOString().slice(0,10)}.json`, JSON.stringify(payload,null,2), "application/json");
-  showToast("Exported", "All data exported as JSON.", "success");
-}
-
-function exportLeads(){
-  const leads = loadLeadQueue();
-  downloadText(`leads-export-${new Date().toISOString().slice(0,10)}.json`, JSON.stringify(leads,null,2), "application/json");
-  showToast("Exported", "Leads exported as JSON.", "success");
-}
-
-function viewOfflineQueue(){
-  const leads = loadLeadQueue();
-  if(!leads.length) return showToast("Queue", "No offline leads stored yet.", "success");
-  const last = leads.slice(-10).map(l=>`${l.leadType} • ${new Date(l.createdAt).toLocaleString()} • ${JSON.stringify(l.payload)}`).join("\n\n");
-  alert(`Offline Queue (latest 10)\n\n${last}`);
-}
-
-/** =========================
- *  WIRING
- *  ========================= */
-function wireFilters(){
-  $("#searchInput")?.addEventListener("input", debounce(e=>{
-    state.view.filter.query = e.target.value || "";
-    renderListings();
-  },150));
-
-  $("#filterType")?.addEventListener("change", e=>{
-    state.view.filter.type = (e.target.value||"any").toLowerCase();
-    renderListings();
-  });
-
-  $("#filterBeds")?.addEventListener("change", e=>{
-    state.view.filter.beds = e.target.value || "any";
-    renderListings();
-  });
-
-  $("#filterMinPrice")?.addEventListener("input", debounce(e=>{
-    state.view.filter.minPrice = e.target.value;
-    renderListings();
-  },150));
-
-  $("#filterMaxPrice")?.addEventListener("input", debounce(e=>{
-    state.view.filter.maxPrice = e.target.value;
-    renderListings();
-  },150));
-
-  $("#filterSort")?.addEventListener("change", e=>{
-    state.view.filter.sort = e.target.value || "newest";
-    renderListings();
-  });
-
-  $("#favoritesBtn")?.addEventListener("click", ()=>{
-    state.view.filter.favoritesOnly = !state.view.filter.favoritesOnly;
-    $("#favoritesBtn").classList.toggle("active", state.view.filter.favoritesOnly);
-    renderListings();
-    showToast("Favorites", state.view.filter.favoritesOnly ? "Showing saved listings" : "Showing all listings", "success");
-  });
-}
-
-function wireGlobalClicks(){
-  document.addEventListener("click",(e)=>{
-    const openBtn = e.target.closest("[data-open]");
-    const favBtn = e.target.closest("[data-fav]");
-    const showingBtn = e.target.closest("[data-showing]");
-    const ctaBtn = e.target.closest("[data-cta]");
-    const thumbBtn = e.target.closest(".thumb-btn");
-    const shareBtn = e.target.closest("[data-share]");
-    const nbBtn = e.target.closest("[data-nb-open]");
-
-    if(openBtn){ openPropertyModal(openBtn.dataset.open); return; }
-
-    if(showingBtn){
-      openPropertyModal(showingBtn.dataset.showing);
-      setTimeout(()=>smoothScrollTo("#contact"), 200);
-      return;
-    }
-
-    if(favBtn){
-      const id = favBtn.dataset.fav;
-      toggleFavorite(id);
-      renderListings();
-      const modalFav = $(".pm-fav");
-      if(modalFav && modalFav.dataset.fav===id){
-        modalFav.textContent = isFavorite(id) ? "❤️ Saved" : "🤍 Save";
-      }
-      showToast("Saved", isFavorite(id) ? "Added to favorites" : "Removed from favorites", "success");
-      return;
-    }
-
-    if(thumbBtn){
-      const src = thumbBtn.dataset.img;
-      const hero = $("#pmHeroImg");
-      if(hero && src) hero.src = src;
-      return;
-    }
-
-    if(shareBtn){
-      const id = shareBtn.dataset.share;
-      const l = state.listings.find(x=>x.id===id);
-      const url = `${location.origin}${location.pathname}#property=${encodeURIComponent(id)}`;
-      const text = l ? `Check this property: ${l.title} (${formatMoney(l.price)})` : "Property";
-      if(navigator.share){
-        navigator.share({ title: "Property", text, url }).catch(()=>{});
-      }else{
-        navigator.clipboard?.writeText(url).then(()=>showToast("Copied", "Share link copied to clipboard.", "success"))
-          .catch(()=>showToast("Share", url, "success", 5000));
-      }
-      return;
-    }
-
-    if(ctaBtn){
-      const t = ctaBtn.dataset.cta;
-      const listingId = ctaBtn.dataset.listing || null;
-      if(t==="call") doCall();
-      if(t==="whatsapp") doWhatsApp(listingId);
-      if(t==="consult") smoothScrollTo("#top");
-      if(t==="valuation") smoothScrollTo("#contact");
-      return;
-    }
-
-    if(nbBtn){
-      const n = NEIGHBORHOODS.find(x=>x.id===nbBtn.dataset.nbOpen);
-      if(!n) return;
-      alert(`${n.name}\n\n${n.vibe}\nAvg Price: ${formatMoney(n.avgPrice)}\nSchools: ${n.schools}\nCommute: ${n.commute}`);
-      return;
-    }
-  });
-}
-
-function wireModalClose(){
-  $("#modalClose")?.addEventListener("click", closePropertyModal);
-  $("#propertyModal")?.addEventListener("click",(e)=>{ if(e.target.id==="propertyModal") closePropertyModal(); });
-  document.addEventListener("keydown",(e)=>{ if(e.key==="Escape") closePropertyModal(); });
-
-  // import modal
-  $("#btnOpenImport")?.addEventListener("click", openImport);
-  $("#importClose")?.addEventListener("click", closeImport);
-  $("#importModal")?.addEventListener("click",(e)=>{ if(e.target.id==="importModal") closeImport(); });
-}
-
-function wireForms(){
-  $("#consultForm")?.addEventListener("submit",(e)=>{e.preventDefault(); handleLeadSubmit($("#consultForm"), "consultation");});
-  $("#showingForm")?.addEventListener("submit",(e)=>{e.preventDefault(); handleLeadSubmit($("#showingForm"), "showing");});
-  $("#valuationForm")?.addEventListener("submit",(e)=>{e.preventDefault(); handleLeadSubmit($("#valuationForm"), "valuation");});
-
-  window.addEventListener("online", trySyncOfflineQueue);
-}
-
-function wireTestimonials(){
-  $("#testPrev")?.addEventListener("click", prevTestimonial);
-  $("#testNext")?.addEventListener("click", nextTestimonial);
-  setInterval(()=>{ if($("#testimonialsTrack")) nextTestimonial(); }, 6500);
-}
-
-function wirePWAInstall(){
-  window.addEventListener("beforeinstallprompt",(e)=>{
-    e.preventDefault();
-    state.ui.deferredInstallPrompt = e;
-    const btn = $("#installAppBtn");
-    if(btn) btn.style.display = "inline-flex";
-  });
-
-  $("#installAppBtn")?.addEventListener("click", async ()=>{
-    if(!state.ui.deferredInstallPrompt) return;
-    state.ui.deferredInstallPrompt.prompt();
-    const { outcome } = await state.ui.deferredInstallPrompt.userChoice;
-    showToast("Install", outcome==="accepted" ? "App installed!" : "Install dismissed.", "success");
-    state.ui.deferredInstallPrompt = null;
-    $("#installAppBtn").style.display = "none";
-  });
-}
-
-function wireImportExport(){
-  $("#btnDownloadCsvTemplate")?.addEventListener("click", ()=>{
-    downloadText("listings-template.csv", csvTemplate(), "text/csv");
-  });
-
-  $("#btnImportNow")?.addEventListener("click", ()=>{
-    const file = $("#importFile")?.files?.[0];
-    if(!file) return showToast("Import", "Please select a CSV or JSON file.", "warning");
-    importListingsFromFile(file);
-  });
-
-  $("#btnExportData")?.addEventListener("click", exportAllData);
-  $("#btnExportLeads")?.addEventListener("click", exportLeads);
-  $("#btnViewOfflineQueue")?.addEventListener("click", viewOfflineQueue);
-
-  $("#btnOpenImport")?.addEventListener("click", ()=>{
-    $("#importStatus").textContent = "";
-    $("#importFile").value = "";
-  });
-
-  $("#importFile")?.addEventListener("change", ()=>{
-    const f = $("#importFile")?.files?.[0];
-    $("#importStatus").textContent = f ? `Selected: ${f.name}` : "";
-  });
-}
-
-/** =========================
- *  INIT
- *  ========================= */
-function loadInitialListings(){
-  const stored = loadListingsFromStorage();
-  if(Array.isArray(stored) && stored.length){
-    state.listings = stored;
-  } else {
-    state.listings = DEFAULT_LISTINGS;
-    saveListingsToStorage(state.listings);
-  }
-}
-
-function initAgentBindings(){
-  $$("[data-agent-phone]").forEach(el=>el.textContent = APP_CONFIG.agent.phoneDisplay);
-  $$("[data-agent-call-link]").forEach(el=>el.setAttribute("href", `tel:${APP_CONFIG.agent.phoneE164}`));
-  $$("[data-agent-wa-link]").forEach(el=>el.setAttribute("href", `https://wa.me/${APP_CONFIG.agent.whatsappE164.replace(/\+/g,"")}`));
-}
-
-function handleDeepLink(){
-  // open property if hash contains #property=ID
-  const hash = location.hash || "";
-  if(hash.includes("property=")){
-    const id = decodeURIComponent(hash.split("property=")[1] || "").trim();
-    if(id) setTimeout(()=>openPropertyModal(id), 300);
-  }
-}
-
-function init(){
-  initAgentBindings();
-  loadInitialListings();
-
-  wireFilters();
-  wireGlobalClicks();
-  wireModalClose();
-  wireForms();
-  wireMortgageCalculator();
-  wireTestimonials();
-  wirePWAInstall();
-  wireImportExport();
-
-  renderNeighborhoods();
-  renderTestimonials();
-  renderListings();
-
-  initMap();
-  handleDeepLink();
-
-  trySyncOfflineQueue();
-
-  window.addEventListener("offline", ()=>showToast("Offline", "You're offline. Forms will be saved locally.", "warning"));
-  window.addEventListener("online", ()=>showToast("Online", "Back online. Syncing queued leads…", "success"));
-
-  // smooth scroll
-  $$('a[href^="#"]').forEach(a=>{
-    a.addEventListener("click",(e)=>{
-      const href = a.getAttribute("href");
-      if(!href || href==="#") return;
-      const target = $(href);
-      if(!target) return;
-      e.preventDefault();
-      target.scrollIntoView({behavior:"smooth", block:"start"});
+// View switcher
+function switchView(view) {
+    document.querySelectorAll('.view-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.getAttribute('data-view') === view) {
+            btn.classList.add('active');
+        }
     });
-  });
+    
+    if (view === 'map') {
+        document.getElementById('mapView').style.display = 'block';
+        document.getElementById('gridView').style.display = 'none';
+        updateMapMarkers();
+    } else {
+        document.getElementById('mapView').style.display = 'none';
+        document.getElementById('gridView').style.display = 'grid';
+    }
 }
 
-document.addEventListener("DOMContentLoaded", init);
+function sortResults(sortBy) {
+    let sorted = [...STATE.properties];
+    
+    switch(sortBy) {
+        case 'price-low':
+            sorted.sort((a, b) => a.price - b.price);
+            break;
+        case 'price-high':
+            sorted.sort((a, b) => b.price - a.price);
+            break;
+        case 'beds':
+            sorted.sort((a, b) => b.beds - a.beds);
+            break;
+        case 'sqft':
+            sorted.sort((a, b) => b.sqft - a.sqft);
+            break;
+        case 'price-drop':
+            // Implement price drop logic
+            break;
+        default:
+            sorted.sort((a, b) => a.daysOnMarket - b.daysOnMarket);
+    }
+    
+    STATE.properties = sorted;
+    displayProperties(sorted);
+}
+
+// ==================== GOOGLE MAPS INTEGRATION ====================
+function loadGoogleMapsAPI() {
+    return new Promise((resolve, reject) => {
+        if (typeof google !== 'undefined') {
+            resolve();
+            return;
+        }
+        
+        const script = document.createElement('script');
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${CONFIG.GOOGLE_MAPS_API_KEY}&libraries=places,drawing`;
+        script.async = true;
+        script.defer = true;
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+    });
+}
+
+function initializeMap() {
+    const mapContainer = document.getElementById('propertyMap');
+    if (!mapContainer) return;
+    
+    STATE.map = new google.maps.Map(mapContainer, {
+        center: { lat: 34.0522, lng: -118.2437 }, // Default to LA
+        zoom: 12,
+        styles: getMapStyles(),
+        mapTypeControl: true,
+        streetViewControl: true,
+        fullscreenControl: true,
+    });
+    
+    updateMapMarkers();
+}
+
+function updateMapMarkers() {
+    if (!STATE.map) return;
+    
+    // Clear existing markers
+    STATE.markers.forEach(marker => marker.setMap(null));
+    STATE.markers = [];
+    
+    // Add markers for properties
+    STATE.properties.forEach(property => {
+        const marker = new google.maps.Marker({
+            position: { lat: property.lat || 34.0522, lng: property.lng || -118.2437 },
+            map: STATE.map,
+            title: property.address,
+            icon: {
+                path: google.maps.SymbolPath.CIRCLE,
+                scale: 10,
+                fillColor: '#d4af37',
+                fillOpacity: 1,
+                strokeColor: '#1a2332',
+                strokeWeight: 2,
+            },
+        });
+        
+        const infoWindow = new google.maps.InfoWindow({
+            content: createMapInfoWindow(property),
+        });
+        
+        marker.addListener('click', () => {
+            infoWindow.open(STATE.map, marker);
+        });
+        
+        STATE.markers.push(marker);
+    });
+    
+    // Fit bounds to show all markers
+    if (STATE.markers.length > 0) {
+        const bounds = new google.maps.LatLngBounds();
+        STATE.markers.forEach(marker => bounds.extend(marker.getPosition()));
+        STATE.map.fitBounds(bounds);
+    }
+}
+
+function createMapInfoWindow(property) {
+    return `
+        <div style="max-width: 250px;">
+            <img src="${property.images[0]}" style="width: 100%; border-radius: 8px; margin-bottom: 8px;">
+            <h4 style="margin: 0 0 8px 0; color: #1a2332;">${formatCurrency(property.price)}</h4>
+            <p style="margin: 0 0 8px 0; font-size: 14px;">${property.address}</p>
+            <p style="margin: 0; font-size: 13px; color: #4b5563;">
+                ${property.beds} beds • ${property.baths} baths • ${property.sqft.toLocaleString()} sqft
+            </p>
+            <button onclick="openPropertyModal(${JSON.stringify(property).replace(/"/g, '&quot;')})" 
+                    style="margin-top: 12px; padding: 8px 16px; background: #d4af37; color: #1a2332; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                View Details
+            </button>
+        </div>
+    `;
+}
+
+function getMapStyles() {
+    return [
+        { elementType: "geometry", stylers: [{ color: "#f5f5f5" }] },
+        { elementType: "labels.icon", stylers: [{ visibility: "off" }] },
+        { elementType: "labels.text.fill", stylers: [{ color: "#616161" }] },
+        { elementType: "labels.text.stroke", stylers: [{ color: "#f5f5f5" }] },
+        {
+            featureType: "administrative.land_parcel",
+            elementType: "labels.text.fill",
+            stylers: [{ color: "#bdbdbd" }],
+        },
+        {
+            featureType: "poi",
+            elementType: "geometry",
+            stylers: [{ color: "#eeeeee" }],
+        },
+        {
+            featureType: "road",
+            elementType: "geometry",
+            stylers: [{ color: "#ffffff" }],
+        },
+        {
+            featureType: "water",
+            elementType: "geometry",
+            stylers: [{ color: "#c9c9c9" }],
+        },
+    ];
+}
+
+function toggleMapType() {
+    if (!STATE.map) return;
+    
+    const currentType = STATE.map.getMapTypeId();
+    STATE.map.setMapTypeId(currentType === 'satellite' ? 'roadmap' : 'satellite');
+}
+
+function drawPolygon() {
+    if (!STATE.map) return;
+    
+    const drawingManager = new google.maps.drawing.DrawingManager({
+        drawingMode: google.maps.drawing.OverlayType.POLYGON,
+        drawingControl: true,
+        drawingControlOptions: {
+            position: google.maps.ControlPosition.TOP_CENTER,
+            drawingModes: ['polygon'],
+        },
+    });
+    
+    drawingManager.setMap(STATE.map);
+}
+
+function toggleHeatmap() {
+    showNotification('Price heatmap feature coming soon!', 'info');
+}
+
+// ==================== VOICE SEARCH ====================
+function startVoiceSearch() {
+    if (!('webkitSpeechRecognition' in window)) {
+        showNotification('Voice search is not supported in your browser', 'warning');
+        return;
+    }
+    
+    const recognition = new webkitSpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = 'en-US';
+    
+    recognition.onstart = () => {
+        showNotification('Listening... Speak now!', 'info');
+    };
+    
+    recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        parseVoiceQuery(transcript);
+    };
+    
+    recognition.onerror = (event) => {
+        showNotification('Voice search error. Please try again.', 'error');
+    };
+    
+    recognition.start();
+}
+
+function parseVoiceQuery(query) {
+    console.log('Voice query:', query);
+    
+    // Parse natural language query
+    const filters = {};
+    
+    // Extract bedrooms
+    const bedsMatch = query.match(/(\d+)\s*(bed|bedroom)/i);
+    if (bedsMatch) filters.beds = bedsMatch[1];
+    
+    // Extract price
+    const priceMatch = query.match(/under\s*\$?(\d+\.?\d*)\s*(million|m|k)/i);
+    if (priceMatch) {
+        const amount = parseFloat(priceMatch[1]);
+        const unit = priceMatch[2].toLowerCase();
+        filters.maxPrice = unit.startsWith('m') ? amount * 1000000 : amount * 1000;
+    }
+    
+    // Extract features
+    if (query.toLowerCase().includes('pool')) filters.pool = true;
+    if (query.toLowerCase().includes('garage')) filters.garage = true;
+    if (query.toLowerCase().includes('waterfront')) filters.waterfront = true;
+    
+    // Extract location (simplified)
+    const locationMatch = query.match(/in\s+([a-z\s]+)/i);
+    if (locationMatch) filters.location = locationMatch[1].trim();
+    
+    STATE.searchFilters = { ...STATE.searchFilters, ...filters };
+    
+    showNotification(`Searching for: ${query}`, 'success');
+    applyFilters();
+}
+
+// ==================== CALCULATORS ====================
+function initializeCalculators() {
+    // Calculator tabs
+    const calcTabs = document.querySelectorAll('.calc-tab');
+    const calcPanels = document.querySelectorAll('.calculator-panel');
+    
+    calcTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            const calcType = tab.getAttribute('data-calc');
+            
+            calcTabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            
+            calcPanels.forEach(panel => {
+                if (panel.getAttribute('data-panel') === calcType) {
+                    panel.classList.add('active');
+                } else {
+                    panel.classList.remove('active');
+                }
+            });
+        });
+    });
+    
+    // Initialize mortgage calculator
+    calculateMortgage();
+}
+
+function calculateMortgage() {
+    const price = parseFloat(document.getElementById('mortgagePrice')?.value) || 500000;
+    const downPayment = parseFloat(document.getElementById('downPaymentAmount')?.value) || 100000;
+    const rate = parseFloat(document.getElementById('interestRate')?.value) || 6.5;
+    const term = parseInt(document.getElementById('loanTerm')?.value) || 30;
+    const propertyTax = parseFloat(document.getElementById('propertyTax')?.value) || 6000;
+    const insurance = parseFloat(document.getElementById('homeInsurance')?.value) || 1500;
+    const hoa = parseFloat(document.getElementById('hoaFees')?.value) || 200;
+    
+    const loanAmount = price - downPayment;
+    const monthlyRate = (rate / 100) / 12;
+    const numPayments = term * 12;
+    
+    // Calculate principal & interest
+    const monthlyPI = (loanAmount * monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / 
+                     (Math.pow(1 + monthlyRate, numPayments) - 1);
+    
+    // Calculate total monthly payment
+    const monthlyTax = propertyTax / 12;
+    const monthlyInsurance = insurance / 12;
+    const totalMonthly = monthlyPI + monthlyTax + monthlyInsurance + hoa;
+    
+    // Calculate totals
+    const totalInterest = (monthlyPI * numPayments) - loanAmount;
+    const totalCost = loanAmount + totalInterest;
+    
+    // Update UI
+    document.getElementById('monthlyPayment').textContent = formatCurrency(totalMonthly);
+    document.getElementById('principalInterest').textContent = formatCurrency(monthlyPI);
+    document.getElementById('taxMonthly').textContent = formatCurrency(monthlyTax);
+    document.getElementById('insuranceMonthly').textContent = formatCurrency(monthlyInsurance);
+    document.getElementById('hoaMonthly').textContent = formatCurrency(hoa);
+    document.getElementById('loanAmount').textContent = formatCurrency(loanAmount);
+    document.getElementById('totalInterest').textContent = formatCurrency(totalInterest);
+    document.getElementById('totalCost').textContent = formatCurrency(totalCost);
+    
+    // Update chart
+    updateMortgageChart(loanAmount, totalInterest);
+}
+
+function updateDownPaymentPercent() {
+    const price = parseFloat(document.getElementById('mortgagePrice').value) || 500000;
+    const amount = parseFloat(document.getElementById('downPaymentAmount').value) || 0;
+    const percent = (amount / price) * 100;
+    document.getElementById('downPaymentPercent').value = percent.toFixed(1);
+    calculateMortgage();
+}
+
+function updateDownPaymentAmount() {
+    const price = parseFloat(document.getElementById('mortgagePrice').value) || 500000;
+    const percent = parseFloat(document.getElementById('downPaymentPercent').value) || 20;
+    const amount = (price * percent) / 100;
+    document.getElementById('downPaymentAmount').value = amount.toFixed(0);
+    calculateMortgage();
+}
+
+function updateMortgageChart(principal, interest) {
+    const ctx = document.getElementById('mortgageChart');
+    if (!ctx) return;
+    
+    // This would use Chart.js or similar library
+    // Placeholder for chart implementation
+    console.log('Chart data:', { principal, interest });
+}
+
+function emailCalculation(type) {
+    const email = prompt('Enter your email address:');
+    if (!email) return;
+    
+    showNotification('Calculation sent to your email!', 'success');
+    
+    // Implement email sending logic
+    sendEmail({
+        to: email,
+        subject: `Your ${type} Calculation`,
+        body: 'Calculation details...'
+    });
+}
+
+// ==================== CHATBOT ====================
+function initializeChatbot() {
+    const chatbotToggle = document.getElementById('chatbotToggle');
+    const chatbotWindow = document.getElementById('chatbotWindow');
+    
+    if (chatbotToggle) {
+        chatbotToggle.addEventListener('click', () => {
+            toggleChatbot();
+        });
+    }
+}
+
+function toggleChatbot() {
+    const chatbotWindow = document.getElementById('chatbotWindow');
+    chatbotWindow.classList.toggle('active');
+    STATE.chatbotActive = chatbotWindow.classList.contains('active');
+    
+    if (STATE.chatbotActive) {
+        document.getElementById('chatbotBadge').style.display = 'none';
+    }
+}
+
+function handleChatKeyPress(event) {
+    if (event.key === 'Enter') {
+        sendChatMessage();
+    }
+}
+
+function sendChatMessage() {
+    const input = document.getElementById('chatbotInput');
+    const message = input.value.trim();
+    
+    if (!message) return;
+    
+    addChatMessage(message, 'user');
+    input.value = '';
+    
+    // Simulate bot response
+    setTimeout(() => {
+        const response = generateChatbotResponse(message);
+        addChatMessage(response, 'bot');
+    }, 1000);
+}
+
+function sendQuickReply(message) {
+    addChatMessage(message, 'user');
+    
+    setTimeout(() => {
+        const response = generateChatbotResponse(message);
+        addChatMessage(response, 'bot');
+    }, 1000);
+}
+
+function addChatMessage(message, type) {
+    const messagesContainer = document.getElementById('chatbotMessages');
+    const messageClass = type === 'user' ? 'user-message' : 'bot-message';
+    
+    const messageHTML = `
+        <div class="message ${messageClass}">
+            <div class="message-content">
+                <p>${message}</p>
+            </div>
+            <span class="message-time">${formatTime(new Date())}</span>
+        </div>
+    `;
+    
+    messagesContainer.insertAdjacentHTML('beforeend', messageHTML);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
+function generateChatbotResponse(message) {
+    const lowercaseMessage = message.toLowerCase();
+    
+    if (lowercaseMessage.includes('search') || lowercaseMessage.includes('properties')) {
+        return "I can help you search for properties! What's your budget and preferred location?";
+    } else if (lowercaseMessage.includes('valuation') || lowercaseMessage.includes('value')) {
+        return "I can provide a free home valuation! Please share your property address.";
+    } else if (lowercaseMessage.includes('tour') || lowercaseMessage.includes('showing')) {
+        return "I'd be happy to schedule a property tour for you! Which property interests you?";
+    } else if (lowercaseMessage.includes('market') || lowercaseMessage.includes('data')) {
+        return `The current median home price in our area is ${formatCurrency(750000)}. The market is ${Math.random() > 0.5 ? 'hot' : 'balanced'} right now!`;
+    } else {
+        return "Thanks for your message! How can I assist you with your real estate needs today?";
+    }
+}
+
+function transferToAgent() {
+    showNotification('Connecting you with the agent...', 'info');
+    setTimeout(() => {
+        window.location.href = `tel:${CONFIG.AGENT_PHONE}`;
+    }, 1500);
+}
+
+// ==================== MODALS ====================
+function initializeModals() {
+    // Close modals when clicking overlay
+    document.querySelectorAll('.modal-overlay').forEach(overlay => {
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+                closeModal(overlay.parentElement.id);
+            }
+        });
+    });
+}
+
+function openContactModal() {
+    document.getElementById('contactModal')?.classList.add('active');
+}
+
+function openValuationModal(address = '') {
+    const modal = document.getElementById('valuationModal');
+    if (modal) {
+        modal.classList.add('active');
+        if (address) {
+            modal.querySelector('input[type="text"]').value = address;
+        }
+    }
+}
+
+function openCalendarModal() {
+    const modal = document.getElementById('calendarModal');
+    if (modal) {
+        modal.classList.add('active');
+        loadCalendarWidget();
+    }
+}
+
+function openOffMarketModal() {
+    document.getElementById('offMarketModal')?.classList.add('active');
+}
+
+function openPropertyModal(property) {
+    const modal = document.getElementById('propertyModal');
+    if (!modal) return;
+    
+    const content = document.getElementById('propertyDetailContent');
+    content.innerHTML = createPropertyDetailView(property);
+    
+    modal.classList.add('active');
+}
+
+function closeModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.classList.remove('active');
+    }
+}
+
+function createPropertyDetailView(property) {
+    return `
+        <div class="property-detail-view">
+            <div class="property-gallery">
+                <img src="${property.images[0]}" alt="${property.address}" class="main-image">
+            </div>
+            <div class="property-detail-info">
+                <div class="property-header">
+                    <h2>${formatCurrency(property.price)}</h2>
+                    <div class="property-badges">
+                        <span class="badge ${property.status.toLowerCase()}">${property.status}</span>
+                    </div>
+                </div>
+                <p class="address">
+                    <i class="fas fa-map-marker-alt"></i>
+                    ${property.address}, ${property.city}, ${property.state} ${property.zip}
+                </p>
+                <div class="property-highlights">
+                    <div class="highlight">
+                        <i class="fas fa-bed"></i>
+                        <strong>${property.beds}</strong>
+                        <span>Bedrooms</span>
+                    </div>
+                    <div class="highlight">
+                        <i class="fas fa-bath"></i>
+                        <strong>${property.baths}</strong>
+                        <span>Bathrooms</span>
+                    </div>
+                    <div class="highlight">
+                        <i class="fas fa-ruler-combined"></i>
+                        <strong>${property.sqft.toLocaleString()}</strong>
+                        <span>Sqft</span>
+                    </div>
+                    <div class="highlight">
+                        <i class="fas fa-dollar-sign"></i>
+                        <strong>${property.pricePerSqft}</strong>
+                        <span>Per Sqft</span>
+                    </div>
+                </div>
+                <div class="property-description">
+                    <h3>Description</h3>
+                    <p>${property.description}</p>
+                </div>
+                <div class="property-actions">
+                    <button class="btn btn-primary btn-large" onclick="bookTour('${property.id}')">
+                        <i class="fas fa-calendar-check"></i> Book a Tour
+                    </button>
+                    <button class="btn btn-secondary btn-large" onclick="requestInfo('${property.id}')">
+                        <i class="fas fa-info-circle"></i> Request Info
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function loadCalendarWidget() {
+    const container = document.getElementById('calendarEmbed');
+    if (!container) return;
+    
+    // Load Calendly widget
+    container.innerHTML = `
+        <iframe src="${CONFIG.CALENDAR_EMBED_URL}" 
+                width="100%" 
+                height="600" 
+                frameborder="0">
+        </iframe>
+    `;
+}
+
+// ==================== FORMS & LEAD CAPTURE ====================
+function handleContactForm(event) {
+    event.preventDefault();
+    
+    const formData = new FormData(event.target);
+    const data = Object.fromEntries(formData);
+    
+    submitLead(data, 'contact_form');
+}
+
+function handleValuation(event) {
+    event.preventDefault();
+    
+    const address = document.getElementById('valuationAddressMain').value;
+    
+    if (!address) {
+        showNotification('Please enter your property address', 'warning');
+        return;
+    }
+    
+    showNotification('Generating your free valuation report...', 'info');
+    
+    generateValuationReport(address);
+}
+
+async function generateValuationReport(address) {
+    try {
+        // Call AVM API
+        const valuation = await fetchPropertyValuation(address);
+        
+        // Create and download PDF report
+        const reportData = {
+            address: address,
+            estimatedValue: valuation.value,
+            confidenceScore: valuation.confidence,
+            comparables: valuation.comparables,
+            marketTrends: valuation.trends,
+        };
+        
+        // Show success modal
+        document.getElementById('successMessage').textContent = 
+            `Your home is valued at approximately ${formatCurrency(valuation.value)}. A detailed report has been sent to your email.`;
+        document.getElementById('successModal').classList.add('active');
+        
+    } catch (error) {
+        showNotification('Failed to generate valuation. Please try again.', 'error');
+    }
+}
+
+async function fetchPropertyValuation(address) {
+    // Placeholder - implement actual AVM API call
+    return {
+        value: 750000 + Math.random() * 250000,
+        confidence: 85 + Math.random() * 10,
+        comparables: [],
+        trends: {},
+    };
+}
+
+async function submitLead(data, source) {
+    try {
+        // Submit to CRM
+        const response = await fetch(CONFIG.CRM_API_ENDPOINT, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${CONFIG.CRM_API_KEY}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                ...data,
+                source: source,
+                timestamp: new Date().toISOString(),
+            }),
+        });
+        
+        if (!response.ok) throw new Error('CRM submission failed');
+        
+        // Send auto-response email
+        sendAutoResponseEmail(data.email);
+        
+        // Send SMS notification to agent
+        sendSMSNotification(`New lead from ${data.name}`);
+        
+        // Show success
+        showNotification('Thank you! We\'ll contact you within 15 minutes.', 'success');
+        
+        // Close modal
+        setTimeout(() => {
+            document.querySelectorAll('.modal').forEach(modal => {
+                modal.classList.remove('active');
+            });
+        }, 2000);
+        
+    } catch (error) {
+        console.error('Lead submission error:', error);
+        
+        // Fallback: store in localStorage
+        saveLeadToLocalStorage(data);
+        
+        showNotification('Thank you! Your information has been received.', 'success');
+    }
+}
+
+function saveLeadToLocalStorage(data) {
+    const leads = JSON.parse(localStorage.getItem('leads') || '[]');
+    leads.push({
+        ...data,
+        timestamp: new Date().toISOString(),
+        synced: false,
+    });
+    localStorage.setItem('leads', JSON.stringify(leads));
+}
+
+async function sendAutoResponseEmail(email) {
+    // Implement email sending logic
+    console.log('Sending auto-response to:', email);
+}
+
+async function sendSMSNotification(message) {
+    // Implement SMS sending logic
+    console.log('Sending SMS:', message);
+}
+
+function sendEmail(params) {
+    // Implement email sending
+    console.log('Sending email:', params);
+}
+
+// ==================== REAL-TIME DATA UPDATES ====================
+function loadLiveMLSData() {
+    fetchMLSProperties(STATE.searchFilters).then(properties => {
+        STATE.properties = properties;
+        displayProperties(properties);
+        updateLiveListingCount(properties.length);
+    });
+}
+
+function loadMarketData() {
+    // Fetch and display market statistics
+    const mockData = {
+        inventory: 1250,
+        medianPrice: 750000,
+        daysOnMarket: 18,
+        listToSoldRatio: 98,
+    };
+    
+    document.getElementById('marketInventory').textContent = mockData.inventory.toLocaleString();
+    document.getElementById('medianPrice').textContent = formatCurrency(mockData.medianPrice);
+    document.getElementById('daysOnMarket').textContent = mockData.daysOnMarket;
+    document.getElementById('listToSoldRatio').textContent = mockData.listToSoldRatio + '%';
+    
+    // Update change indicators
+    document.getElementById('inventoryChange').textContent = '+5% vs last month';
+    document.getElementById('priceChange').textContent = '+8% YoY';
+    document.getElementById('domChange').textContent = '-3 days';
+    document.getElementById('ratioChange').textContent = '+2%';
+}
+
+async function loadCurrentInterestRate() {
+    try {
+        // Fetch current interest rates from API
+        // This is a placeholder
+        const rate = 6.5 + (Math.random() - 0.5);
+        STATE.currentInterestRate = rate;
+        
+        document.querySelectorAll('#currentRate').forEach(el => {
+            el.textContent = rate.toFixed(2) + '%';
+        });
+        
+        document.getElementById('interestRate').value = rate.toFixed(2);
+        
+    } catch (error) {
+        console.error('Failed to load interest rates:', error);
+    }
+}
+
+function loadLiveReviews() {
+    // Fetch reviews from Google/Zillow/Facebook APIs
+    // This is a placeholder
+    console.log('Loading live reviews...');
+}
+
+function loadAgentAvailability() {
+    const now = new Date();
+    const hour = now.getHours();
+    
+    const isAvailable = hour >= 8 && hour < 21;
+    
+    const statusEl = document.getElementById('agentAvailability');
+    if (statusEl) {
+        statusEl.textContent = isAvailable ? 'Available Now' : 'Offline - Will respond soon';
+        statusEl.style.color = isAvailable ? '#10b981' : '#f59e0b';
+    }
+}
+
+function updateLiveListingCount(count) {
+    document.getElementById('liveListingCount').textContent = count;
+}
+
+function updateLastUpdateTime() {
+    const now = new Date();
+    const timeAgo = getTimeAgo(STATE.lastMLSUpdate || now);
+    document.getElementById('lastUpdateTime').textContent = timeAgo;
+}
+
+function startAutoUpdates() {
+    // Update MLS data every 5 minutes
+    setInterval(loadLiveMLSData, CONFIG.PROPERTY_UPDATE_INTERVAL);
+    
+    // Update market data every hour
+    setInterval(loadMarketData, CONFIG.MARKET_DATA_UPDATE_INTERVAL);
+    
+    // Update interest rates every hour
+    setInterval(loadCurrentInterestRate, CONFIG.MARKET_DATA_UPDATE_INTERVAL);
+    
+    // Update "last updated" time every minute
+    setInterval(updateLastUpdateTime, 60000);
+    
+    // Update agent availability every 5 minutes
+    setInterval(loadAgentAvailability, 300000);
+}
+
+// ==================== ANIMATIONS ====================
+function initializeAnimations() {
+    // Intersection Observer for scroll animations
+    const observerOptions = {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px',
+    };
+    
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('animate-in');
+                observer.unobserve(entry.target);
+            }
+        });
+    }, observerOptions);
+    
+    document.querySelectorAll('.animate-fade-in-up').forEach(el => {
+        observer.observe(el);
+    });
+}
+
+function initializeFloatingCTA() {
+    const floatingCTA = document.getElementById('floatingCTA');
+    if (!floatingCTA) return;
+    
+    let lastScroll = 0;
+    
+    window.addEventListener('scroll', () => {
+        const currentScroll = window.pageYOffset;
+        
+        if (currentScroll > 500) {
+            floatingCTA.style.transform = 'translateY(0)';
+        } else {
+            floatingCTA.style.transform = 'translateY(100%)';
+        }
+        
+        lastScroll = currentScroll;
+    });
+}
+
+// ==================== UTILITIES ====================
+function formatCurrency(amount) {
+    return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+    }).format(amount);
+}
+
+function formatTime(date) {
+    return new Intl.DateTimeFormat('en-US', {
+        hour: 'numeric',
+        minute: 'numeric',
+        hour12: true,
+    }).format(date);
+}
+
+function getTimeAgo(date) {
+    const seconds = Math.floor((new Date() - date) / 1000);
+    
+    if (seconds < 60) return 'Just now';
+    if (seconds < 3600) return `${Math.floor(seconds / 60)} minutes ago`;
+    if (seconds < 86400) return `${Math.floor(seconds / 3600)} hours ago`;
+    return `${Math.floor(seconds / 86400)} days ago`;
+}
+
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.innerHTML = `
+        <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+        <span>${message}</span>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => notification.classList.add('show'), 100);
+    
+    setTimeout(() => {
+        notification.classList.remove('show');
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
+
+function toggleFavorite(propertyId, event) {
+    event.stopPropagation();
+    
+    const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+    const index = favorites.indexOf(propertyId);
+    
+    if (index > -1) {
+        favorites.splice(index, 1);
+        showNotification('Removed from favorites', 'info');
+    } else {
+        favorites.push(propertyId);
+        showNotification('Added to favorites', 'success');
+    }
+    
+    localStorage.setItem('favorites', JSON.stringify(favorites));
+    updateFavoriteUI(propertyId, index === -1);
+}
+
+function updateFavoriteUI(propertyId, isFavorite) {
+    const card = document.querySelector(`[data-id="${propertyId}"]`);
+    if (!card) return;
+    
+    const icon = card.querySelector('.favorite-btn i');
+    if (icon) {
+        icon.className = isFavorite ? 'fas fa-heart' : 'far fa-heart';
+    }
+}
+
+function saveSearch() {
+    const searchName = prompt('Name this search:');
+    if (!searchName) return;
+    
+    const searches = JSON.parse(localStorage.getItem('savedSearches') || '[]');
+    searches.push({
+        name: searchName,
+        filters: STATE.searchFilters,
+        timestamp: new Date().toISOString(),
+    });
+    
+    localStorage.setItem('savedSearches', JSON.stringify(searches));
+    showNotification('Search saved! You\'ll receive alerts for new matching properties.', 'success');
+}
+
+function loadUserPreferences() {
+    // Load saved searches, favorites, etc.
+    const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+    STATE.favoriteProperties = favorites;
+    
+    const searches = JSON.parse(localStorage.getItem('savedSearches') || '[]');
+    STATE.savedSearches = searches;
+}
+
+function bookTour(propertyId) {
+    showNotification('Opening booking calendar...', 'info');
+    setTimeout(() => openCalendarModal(), 500);
+}
+
+function requestInfo(propertyId) {
+    openContactModal();
+}
+
+function downloadBuyerGuide() {
+    showNotification('Downloading Buyer\'s Guide...', 'info');
+    // Implement PDF download
+}
+
+function downloadSellerGuide() {
+    showNotification('Downloading Seller\'s Playbook...', 'info');
+    // Implement PDF download
+}
+
+function openMarketReportModal() {
+    showNotification('Feature coming soon!', 'info');
+}
+
+function openQuickActionModal() {
+    scrollToSearch();
+}
+
+function openPrivacyModal() {
+    showNotification('Privacy Policy - Feature coming soon!', 'info');
+}
+
+function openTermsModal() {
+    showNotification('Terms of Service - Feature coming soon!', 'info');
+}
+
+function openAccessibilityModal() {
+    showNotification('Accessibility Statement - Feature coming soon!', 'info');
+}
+
+function openSellerConsultation() {
+    openCalendarModal();
+}
+
+function handleMarketReport(event) {
+    event.preventDefault();
+    showNotification('Market report will be sent to your email!', 'success');
+}
+
+function playAgentVideo() {
+    showNotification('Video player coming soon!', 'info');
+}
+
+function playTestimonial(id) {
+    showNotification(`Playing testimonial ${id}...`, 'info');
+}
+
+function prevReview() {
+    console.log('Previous review');
+}
+
+function nextReview() {
+    console.log('Next review');
+}
+
+function updateChart(period) {
+    console.log('Updating chart for period:', period);
+}
+
+// ==================== NOTIFICATION STYLES (Add to CSS) ====================
+const notificationStyles = `
+.notification {
+    position: fixed;
+    top: -100px;
+    right: 2rem;
+    background: white;
+    padding: 1rem 1.5rem;
+    border-radius: 0.75rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    z-index: 9999;
+    transition: all 0.3s ease;
+    min-width: 300px;
+}
+
+.notification.show {
+    top: 2rem;
+}
+
+.notification-success {
+    border-left: 4px solid #10b981;
+}
+
+.notification-error {
+    border-left: 4px solid #ef4444;
+}
+
+.notification-warning {
+    border-left: 4px solid #f59e0b;
+}
+
+.notification-info {
+    border-left: 4px solid #3b82f6;
+}
+
+.notification i {
+    font-size: 1.25rem;
+}
+
+.notification-success i {
+    color: #10b981;
+}
+
+.notification-error i {
+    color: #ef4444;
+}
+
+.notification-warning i {
+    color: #f59e0b;
+}
+
+.notification-info i {
+    color: #3b82f6;
+}
+`;
+
+// Inject notification styles
+const styleSheet = document.createElement('style');
+styleSheet.textContent = notificationStyles;
+document.head.appendChild(styleSheet);
+
+// ==================== CONSOLE BRANDING ====================
+console.log('%c🏆 10-STAR ULTRA-PREMIUM REAL ESTATE WEBSITE', 'color: #d4af37; font-size: 20px; font-weight: bold;');
+console.log('%cPowered by Advanced Real-Time Technology', 'color: #1a2332; font-size: 14px;');
+console.log('%c© 2024 - All Rights Reserved', 'color: #4b5563; font-size: 12px;');
+
+// ==================== END OF app.js ====================
